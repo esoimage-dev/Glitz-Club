@@ -1,0 +1,11 @@
+:HL["/Glitz-Club/_next/static/chunks/0iq1cdel7c2zp.css","style"]
+:HL["/Glitz-Club/_next/static/media/melodrama_300-s.p.1i9d_z51glxao.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+:HL["/Glitz-Club/_next/static/media/melodrama_400-s.p.0xxj2i5lel0t_.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+:HL["/Glitz-Club/_next/static/media/melodrama_500-s.p.41-yca9e23oit.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+:HL["/Glitz-Club/_next/static/media/melodrama_700-s.p.09f20_as_4_hf.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+:HL["/Glitz-Club/_next/static/media/switzer_400-s.p.2-8jtw7dj7qzq.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+:HL["/Glitz-Club/_next/static/media/switzer_500-s.p.3l_u-a-fiviai.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+:HL["/Glitz-Club/_next/static/media/switzer_600-s.p.394xklrezc08f.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+2:[["children",{"s":"__PAGE__","h":160}]]
+1:[["children",{"s":"brand","h":96,"c":"$Q2"}]]
+0:{"b":"-Z4YM5sPe49PBDnSO8lk7","t":{"t":{"s":"","h":80,"c":"$Q1"}}}

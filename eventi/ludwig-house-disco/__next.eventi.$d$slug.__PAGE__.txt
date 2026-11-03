@@ -1,0 +1,40 @@
+1:"$Sreact.fragment"
+2:"/Glitz-Club/_next/static/chunks/2cvlvg_0cnx9e.js"
+3:"/Glitz-Club/_next/static/chunks/05y4uf6xbfzt8.js"
+4:"/Glitz-Club/_next/static/chunks/0u639d7d93fuf.js"
+5:I[45850,["$2","$3","$4"],"default"]
+6:I[39756,["$2","$3","$4"],"default"]
+7:I[37457,["$2","$3","$4"],"default"]
+10:"/Glitz-Club/_next/static/chunks/1vjhlgnmepdfp.js"
+11:I[39096,["$2","$3","$4","$10"],"default"]
+12:I[22016,["$2","$3","$4","$10"],""]
+18:"ViewportBoundary"
+19:I[97367,["$2","$3","$4"],"$18"]
+1a:"MetadataBoundary"
+1b:I[97367,["$2","$3","$4"],"$1a"]
+1c:"$Sreact.suspense"
+1d:I[27201,["$2","$3","$4"],"IconMark"]
+:HL["/Glitz-Club/_next/static/chunks/0iq1cdel7c2zp.css","style"]
+9:X
+c:X
+c:C
+f:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$1","c",{"children":[["$","main",null,{"children":[["$","article",null,{"className":"evd tone-night","data-tone":"night","children":[["$","header",null,{"className":"evd-head","children":[["$","p",null,{"className":"evd-date","children":["venerdì 6 agosto"," ",2027]}],["$","h1",null,{"className":"d evd-name","children":"Ludwig"}]]}],["$","div",null,{"className":"evd-body","children":[["$","div",null,{"className":"evd-poster ph","children":["$","div",null,{"className":"tp","children":[["$","svg",null,{"viewBox":"0 0 400 500","fill":"none","aria-hidden":"true","children":[["$","defs",null,{"children":["$","linearGradient",null,{"id":"tp","x1":"0","x2":"1","children":[["$","stop",null,{"stopColor":"#5a5cf7"}],["$","stop",null,{"offset":".55","stopColor":"#d41fd0"}],["$","stop",null,{"offset":"1","stopColor":"#ff8a2a"}]]}]}],["$","path",null,{"d":"M40 500V220a160 160 0 0 1 320 0v280","stroke":"url(#tp)","strokeWidth":"2.5"}]]}],["$","div",null,{"className":"tp-t","children":[["$","span",null,{"className":"d","children":"Ludwig"}],["$","span",null,{"children":"6 agosto"}]]}]]}]}],["$","div",null,{"className":"evd-info","children":[["$","p",null,{"className":"d d-xl","children":"House e disco"}],["$","ul",null,{"className":"evd-lineup","children":[["$","li","Ludwig",{"children":"Ludwig"}],["$","li","Resident Marco Cavax",{"children":"Resident Marco Cavax"}]]}],["$","div",null,{"className":"evd-actions","children":[["$","$L11",null,{"event":{"slug":"ludwig-house-disco","date":"2027-08-06","name":"Ludwig","tagline":"House e disco","lineup":["Ludwig","Resident Marco Cavax"]}}],["$","$L12",null,{"href":"/tavoli?evento=ludwig-house-disco","className":"btn btn-line","children":["$","span",null,{"children":"Scegli un tavolo"}]}]]}],["$","dl",null,{"className":"evd-facts","children":[["$","div",null,{"children":[["$","dt",null,{"className":"dim","children":"Cancelli"}],["$","dd",null,{"children":"Dalle 23:30"}]]}],["$","div",null,{"children":[["$","dt",null,{"className":"dim","children":"Età"}],["$","dd",null,{"children":"18+, con documento"}]]}],["$","div",null,{"children":[["$","dt",null,{"className":"dim","children":"Dress code"}],["$","dd",null,{"children":"Smart ed elegante"}]]}],["$","div",null,{"children":[["$","dt",null,{"className":"dim","children":"Dove"}],["$","dd",null,{"children":"Contrada Dino, San Nicola Arcella"}]]}]]}]]}]]}],"$L13"]}],"$L14"]}],["$L15"],"$L16"]}],"p":"$@17","v":null,"s":"$9"}}]]
+d:[["children",{"s":{"n":"slug","t":"d","k":"ludwig-house-disco","s":[]},"h":96,"d":{"r":["$","$1","c",{"children":[null,["$","$L6",null,{"parallelRouterKey":"children","template":["$","$L7",null,{}]}]]}],"p":"$@e","v":"$c","s":"$9"},"c":"$Qf"}]]
+a:[["children",{"s":"eventi","h":96,"d":{"r":["$","$1","c",{"children":[null,["$","$L6",null,{"parallelRouterKey":"children","template":["$","$L7",null,{}]}]]}],"p":"$@b","v":"$c","s":"$9"},"c":"$Qd"}]]
+0:{"t":{"t":{"s":"","h":80,"d":{"r":["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/Glitz-Club/_next/static/chunks/0iq1cdel7c2zp.css","precedence":"next"}],["$","script","script-0",{"src":"/Glitz-Club/_next/static/chunks/2cvlvg_0cnx9e.js","async":true}],["$","script","script-1",{"src":"/Glitz-Club/_next/static/chunks/05y4uf6xbfzt8.js","async":true}],["$","script","script-2",{"src":"/Glitz-Club/_next/static/chunks/0u639d7d93fuf.js","async":true}]],["$","html",null,{"lang":"it","className":"WZk9La_variable ZGdjPG_variable","suppressHydrationWarning":true,"children":[["$","head",null,{"children":["$","script",null,{"dangerouslySetInnerHTML":{"__html":"try{var p=location.pathname;if(p.charAt(p.length-1)==='/')p=p.slice(0,-1);if(sessionStorage.getItem('glitz-intro')||p!=='/Glitz-Club')document.documentElement.dataset.intro='seen'}catch(e){}"}}]}],["$","body",null,{"children":[["$","$L5",null,{}],["$","$L6",null,{"parallelRouterKey":"children","template":["$","$L7",null,{}],"notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]]}]]}]]}]]}],"p":"$@8","v":null,"s":"$9"},"c":"$Qa"},"h":{"r":["$","$1","h",{"children":[null,["$","$L19",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1, viewport-fit=cover"}],["$","meta","2",{"name":"theme-color","content":"#000000"}]]}],["$","$L1b",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1c",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Ludwig, Glitz Club"}],["$","meta","1",{"name":"description","content":"Il club all'aperto davanti all'Isola di Dino. Serate d'estate, tavoli vista mare e l'arco che si accende al tramonto."}],["$","meta","2",{"name":"robots","content":"noindex, nofollow"}],["$","link","3",{"rel":"icon","href":"/Glitz-Club/brand/favicon.svg"}],["$","$L1d","4",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1e","v":null,"s":"$9"}},"a":"$@1f","u":"$@20","b":"-Z4YM5sPe49PBDnSO8lk7"}
+21:I[56691,["$2","$3","$4","$10"],"default"]
+22:I[97367,["$2","$3","$4"],"OutletBoundary"]
+13:["$","$L12",null,{"href":"/eventi/pagante-ferragosto","className":"evd-next","children":[["$","span",null,{"className":"dim","children":"La notte dopo"}],["$","span",null,{"className":"d d-xxl","children":"Pagante"}]]}]
+14:["$","$L21",null,{}]
+15:["$","script","script-0",{"src":"/Glitz-Club/_next/static/chunks/1vjhlgnmepdfp.js","async":true}]
+16:["$","$L22",null,{"children":["$","$1c",null,{"name":"Next.MetadataOutlet","children":"$@23"}]}]
+9:300
+23:null
+20:true
+9:C
+1f:0
+e:"$undefined"
+b:"$undefined"
+8:"$undefined"
+1e:"$undefined"
+17:"$undefined"
