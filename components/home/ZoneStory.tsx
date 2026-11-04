@@ -85,7 +85,6 @@ export default function ZoneStory() {
     if (row && btn && row.scrollWidth > row.clientWidth) row.scrollTo({ left: btn.offsetLeft - (row.clientWidth - btn.offsetWidth) / 2, behavior: 'smooth' });
   }, [step]);
 
-  const z = step >= 0 ? STEPS[step] : null;
   return (
     <section ref={ref} className="zs tone-night" data-tone="night" data-time="1440-1530">
       <div className="zs-stick">
@@ -109,7 +108,7 @@ export default function ZoneStory() {
             <ol ref={dots} className="zs-dots" aria-label="Vai a una zona del club">
               {STEPS.map((s, i) => <li key={s.id}><button type="button" data-on={i === step} aria-current={i === step ? 'true' : undefined} onClick={() => goTo(i)}>{s.name}</button></li>)}
             </ol>
-            <Link href={z ? `/tavoli?zona=${z.id}` : '/tavoli'} className="btn btn-led">Scegli il tavolo sulla mappa</Link>
+            <Link href="/tavoli" className="btn btn-led">Scegli il tavolo sulla mappa</Link>
           </div>
         </div>
       </div>

@@ -12,10 +12,14 @@ const hash = (s: string) => { let h = 5381; for (const c of s) h = (h * 33 + c.c
 // Simulated until the back office holds real availability.
 const isTaken = (table: string, ev: string) => hash(table + ev) % 100 < 26;
 
+// These two zones sit side by side: spread their labels so they don't cover each other.
+const LABEL_NUDGE: Partial<Record<ZoneId, [number, number]>> = { riva: [-3, -1], seaview: [2.5, 4] };
+
 const centre = (id: ZoneId): [number, number, number] => {
   const list = TABLES.filter((t) => t.zone === id);
   const s = list.reduce((a, t) => [a[0] + t.p[0], a[1] + t.p[1], a[2] + t.p[2]], [0, 0, 0]);
-  return [s[0] / list.length, s[1] / list.length + 1, s[2] / list.length];
+  const nudge = LABEL_NUDGE[id] ?? [0, 0];
+  return [s[0] / list.length + nudge[0], s[1] / list.length + 1, s[2] / list.length + nudge[1]];
 };
 
 export default function TablePicker() {
@@ -148,7 +152,11 @@ export default function TablePicker() {
             </button>
           ))}
         </div>
-        <p className="tp-help small">Trascina per ruotare, frecce per muoverti, rotella per lo zoom</p>
+        <nav className="tp-zonebar" aria-label="Zone del club">
+          <button type="button" aria-current={!zone ? 'true' : undefined} onClick={() => pickZone(null)}>Tutte</button>
+          {zones.map((z) => <button key={z.id} type="button" aria-current={zone === z.id ? 'true' : undefined} onClick={() => pickZone(z.id)}>{z.name}</button>)}
+        </nav>
+        <p className="tp-help">Trascina per ruotare, frecce per muoverti, rotella per lo zoom</p>
         <div className="tp-pad" role="group" aria-label="Sposta la mappa">
           {([['up', 0, 1, 'Avanti'], ['left', -1, 0, 'A sinistra'], ['right', 1, 0, 'A destra'], ['down', 0, -1, 'Indietro']] as const).map(([k, x, z, label]) => (
             <button key={k} type="button" className={`tp-pad-${k}`} aria-label={label}

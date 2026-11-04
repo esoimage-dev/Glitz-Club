@@ -75,8 +75,12 @@
 .tp-tm[data-taken='true'] span { background: rgba(0,0,0,.6); color: rgba(255,255,255,.55); text-decoration: line-through; cursor: not-allowed; }
 .tp-tm[data-taken='true']:hover span { scale: 1; }
 .tp-canvas.is-pan { cursor: grab; }
-.tp-help { position: absolute; left: 50%; bottom: 34px; transform: translateX(-50%); white-space: nowrap; pointer-events: none; text-shadow: 0 1px 8px rgba(0,0,0,.7); }
-@media (max-width: 1160px) { .tp-help { display: none; } }
+/* Bottom of the map: light toggle, zone buttons, then the instructions small and out of the way */
+.tp-zonebar { position: absolute; left: 50%; bottom: 38px; transform: translateX(-50%); display: flex; gap: 2px; padding: 4px; border-radius: 999px; background: rgba(0,0,0,.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); font-size: var(--t-xs); white-space: nowrap; }
+.tp-zonebar button { min-height: 34px; padding: 0 13px; border-radius: 999px; transition: background-color .25s, color .25s; }
+.tp-zonebar button:hover { background: rgba(255,255,255,.16); }
+.tp-zonebar [aria-current='true'], .tp-zonebar [aria-current='true']:hover { background: #fff; color: #000; }
+.tp-help { position: absolute; left: 0; right: 0; bottom: 12px; text-align: center; font-size: .6875rem; opacity: .7; pointer-events: none; text-shadow: 0 1px 6px rgba(0,0,0,.8); }
 .tp-help-touch { display: none; }
 .tp-pad { display: none; position: absolute; right: 12px; bottom: 12px; width: 132px; height: 132px; }
 .tp-pad button { position: absolute; width: 44px; height: 44px; border-radius: 50%; background: rgba(0,0,0,.6); color: #fff; box-shadow: inset 0 0 0 1px rgba(255,255,255,.45); display: grid; place-items: center; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
@@ -90,7 +94,9 @@
 .tp-pad-right { right: 0; top: 44px; }
 .tp-pad-right svg { rotate: 90deg; }
 @media (hover: none) { .tp-pad { display: block; } .tp-help { display: none; } .tp-help-touch { display: inline; } }
-.tp-mood { position: absolute; left: var(--gutter); bottom: 22px; display: flex; padding: 4px; border-radius: 999px; background: rgba(0,0,0,.55); backdrop-filter: blur(6px); font-size: var(--t-xs); }
+/* Narrow desktop windows: toggle above the zones so the two never touch */
+@media (min-width: 861px) and (max-width: 1240px) { .tp-mood { bottom: 88px; } }
+.tp-mood { position: absolute; left: var(--gutter); bottom: 38px; display: flex; padding: 4px; border-radius: 999px; background: rgba(0,0,0,.55); backdrop-filter: blur(6px); font-size: var(--t-xs); }
 .tp-mood button { min-height: 34px; padding: 0 14px; border-radius: 999px; }
 .tp-mood [aria-pressed='true'] { background: #fff; color: #000; }
 .tp-panel { background: #000; padding: 84px 26px 22px; overflow-y: auto; display: flex; flex-direction: column; justify-content: space-between; gap: 26px; }
@@ -189,6 +195,11 @@
   .tp-page { grid-template-columns: 1fr; grid-template-rows: 48svh 1fr; }
   .tp-panel { padding: 18px 16px 18px; }
   .tp-help { display: none; }
+  .tp-mood { bottom: 12px; }
+  /* Phones: zones scroll sideways under the header, away from the arrows */
+  .tp-zonebar { left: 12px; right: 12px; bottom: auto; top: 66px; transform: none; overflow-x: auto; scrollbar-width: none; border-radius: 22px; }
+  .tp-zonebar::-webkit-scrollbar { display: none; }
+  .tp-zonebar button { flex: none; }
   .tp-zones .d { font-size: 1.9rem; }
   .tp-zm { font-size: 1.1rem; padding: 5px 11px 7px; }
   .tk-pass { padding: 70px 26px 24px; }

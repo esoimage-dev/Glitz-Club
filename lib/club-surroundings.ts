@@ -149,6 +149,8 @@ export function buildSurroundings(phone: boolean, tables: { id: string; zone: st
   // --- Hedges. Box core plus clumps on top so it reads as a plant, not a wall
   const spans: Span[] = [];
   const line = (pts: P2[], y0: number, y1: number, w: number) => { for (let i = 1; i < pts.length; i++) spans.push({ a: pts[i - 1], b: pts[i], y0, y1, w }); };
+  // Clean line between the Riva Deck side and the house lawn, closing the step between the two levels
+  line([[-9.2, 19.25], [22.1, 23.85]], 0.1, 1.45, 0.85);
   // Sea side, one on every drop
   line([[16.9, -23], [12.9, 20.4]], T1, 0.75, 0.9);
   line([[12.9, 20.4], [22.5, 24], [25.5, 67.2], [25.5, SOUTH]], T1, 1.15, 0.9);
@@ -237,15 +239,60 @@ export function buildSurroundings(phone: boolean, tables: { id: string; zone: st
   const seaFar = new THREE.CircleGeometry(2500, 48); seaFar.rotateX(-Math.PI / 2); seaFar.translate(0, -10.32, 0);
   add(seaFar, seaMaterial);
 
-  // --- Brick path in front of the two bathroom doors, joining the stepping stones
-  const bricks: THREE.Matrix4[] = [];
-  for (let i = 0; i < 18; i++) for (let j = 0; j < 7; j++) {
-    dummy.position.set(-26.1 + i * 0.27 + (j % 2) * 0.13, 0.82, 22.75 + j * 0.15); dummy.rotation.set(0, 0, 0); dummy.scale.set(0.25, 0.04, 0.13); dummy.updateMatrix();
-    bricks.push(dummy.matrix.clone());
+  // --- Wood deck around every white block, stone path to the bathroom's front door
+  const DECK_Y = 0.83;
+  const blocks: [number, number, number, number][] = [[-26.14, -21.94, 15.67, 22.17], [8.45, 10.15, 22.45, 24.35], [-29.4, -27.6, 33.4, 40.8]];
+  const planks: [number, number, number, number][] = [];
+  const deckRing = (x0: number, x1: number, z0: number, z1: number, w: number, north = true) => {
+    const P = 0.34;
+    for (let x = x0 - w; x < x1 + w; x += P) for (const [a, b] of north ? [[z0 - w, z0], [z1, z1 + w]] : [[z1, z1 + w]]) planks.push([x + P / 2, (a + b) / 2, P - 0.03, b - a]);
+    for (let z = z0; z < z1; z += P) for (const [a, b] of [[x0 - w, x0], [x1, x1 + w]]) planks.push([(a + b) / 2, z + P / 2, b - a, P - 0.03]);
+  };
+  // The small block backs onto the hedge, so no deck on that side
+  blocks.forEach(([x0, x1, z0, z1], i) => deckRing(x0, x1, z0, z1, 1.1, i !== 1));
+  const deck = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial(), planks.length);
+  planks.forEach(([x, z, w, d], i) => {
+    dummy.rotation.set(0, 0, 0); dummy.position.set(x, DECK_Y, z); dummy.scale.set(w, 0.06, d); dummy.updateMatrix(); deck.setMatrixAt(i, dummy.matrix);
+    deck.setColorAt(i, tint.set(['#8f6a48', '#9a7350', '#856243'][i % 3]));
+  });
+  group.add(deck);
+  const stonePts: P2[] = [];
+  const A: P2 = [-15.5, 21.9]; const B: P2 = [-20.6, 19];
+  const steps = Math.ceil(Math.hypot(B[0] - A[0], B[1] - A[1]) / 0.43);
+  const nx = -(B[1] - A[1]); const nz = B[0] - A[0]; const nl = Math.hypot(nx, nz);
+  for (let i = 0; i <= steps; i++) for (const side of [-1, 1]) stonePts.push([lerp(A[0], B[0], i / steps) + (nx / nl) * side * 0.25, lerp(A[1], B[1], i / steps) + (nz / nl) * side * 0.25]);
+  const stones = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.21, 0.21, 0.055, 8), new THREE.MeshLambertMaterial({ color: '#888c7e' }), stonePts.length);
+  stonePts.forEach(([x, z], i) => { dummy.position.set(x, 0.82, z); dummy.rotation.set(0, i * 0.6, 0); dummy.scale.set(1, 1, 1); dummy.updateMatrix(); stones.setMatrixAt(i, dummy.matrix); });
+  group.add(stones);
+
+  // --- The lawn between the bar and the bathrooms: two loungers, a low table, planted pots
+  const white = new THREE.MeshLambertMaterial({ color: '#ece9df' });
+  const wood = new THREE.MeshLambertMaterial({ color: '#8a6749' });
+  const loungerParts: THREE.BufferGeometry[] = []; const loungerWood: THREE.BufferGeometry[] = [];
+  for (const [x, z, yaw] of [[-13.2, 16.6, 0.5], [-15.1, 16.3, 0.5], [-17.6, 16.9, -0.4]]) {
+    const m = new THREE.Matrix4().compose(new THREE.Vector3(x, 0.8, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, yaw, 0)), new THREE.Vector3(1, 1, 1));
+    const part = (list: THREE.BufferGeometry[], w: number, h: number, d: number, px: number, py: number, pz: number, tilt = 0) => {
+      const g = new THREE.BoxGeometry(w, h, d); if (tilt) g.rotateX(tilt); g.translate(px, py, pz); g.applyMatrix4(m); list.push(g);
+    };
+    part(loungerWood, 0.74, 0.07, 1.5, 0, 0.26, 0.28); part(loungerWood, 0.74, 0.07, 0.72, 0, 0.5, -0.74, 0.62);
+    for (const lx of [-0.32, 0.32]) for (const lz of [-0.3, 0.9]) part(loungerWood, 0.06, 0.26, 0.06, lx, 0.13, lz);
+    part(loungerParts, 0.68, 0.09, 1.42, 0, 0.34, 0.28); part(loungerParts, 0.68, 0.09, 0.68, 0, 0.58, -0.72, 0.62);
   }
-  const brickMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial(), bricks.length);
-  bricks.forEach((m, i) => { brickMesh.setMatrixAt(i, m); brickMesh.setColorAt(i, tint.set(['#a4634a', '#b0704f', '#97593f'][i % 3])); });
-  group.add(brickMesh);
+  add(mergeGeometries(loungerParts), white); add(mergeGeometries(loungerWood), wood);
+  const tableTop = new THREE.CylinderGeometry(0.3, 0.3, 0.05, 14); tableTop.translate(-14.2, 1.26, 18.1);
+  const tableLeg = new THREE.CylinderGeometry(0.03, 0.05, 0.42, 6); tableLeg.translate(-14.2, 1.03, 18.1);
+  add(mergeGeometries([tableTop, tableLeg]), white);
+  // Pots: terracotta, a clipped shrub, a few flowers
+  const potSpots: [number, number, number][] = [[-11.2, 16.2, 1], [-11.4, 18.6, 0.8], [-19.6, 15.6, 1.1], [-20.6, 22.2, 0.8], [7.2, 22.3, 0.9], [11.4, 25.1, 0.9], [-19.4, 18.1, 0.75]];
+  const pots = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.34, 0.24, 0.5, 12), new THREE.MeshLambertMaterial({ color: '#b5714f' }), potSpots.length);
+  const shrubs = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 1), new THREE.MeshLambertMaterial({ color: '#46613a', flatShading: true }), potSpots.length);
+  const flowers = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), new THREE.MeshLambertMaterial({ color: '#b05a98' }), potSpots.length * 4);
+  potSpots.forEach(([x, z, r], i) => {
+    dummy.rotation.set(0, 0, 0); dummy.position.set(x, 1.05, z); dummy.scale.setScalar(r); dummy.updateMatrix(); pots.setMatrixAt(i, dummy.matrix);
+    dummy.position.set(x, 1.3 + r * 0.45, z); dummy.scale.set(r * 0.62, r * 0.6, r * 0.62); dummy.updateMatrix(); shrubs.setMatrixAt(i, dummy.matrix);
+    for (let k = 0; k < 4; k++) { const a = k * 1.7 + i; dummy.position.set(x + Math.cos(a) * r * 0.5, 1.5 + r * 0.45 + (k % 2) * 0.12, z + Math.sin(a) * r * 0.5); dummy.scale.setScalar(0.08); dummy.updateMatrix(); flowers.setMatrixAt(i * 4 + k, dummy.matrix); }
+  });
+  group.add(pots, shrubs, flowers);
 
   // --- Road and the access apron up to the gate
   const roadPos: number[] = [];
