@@ -32,7 +32,6 @@ export default function Sunset() {
           <span className="d sunset-w" aria-hidden="true">tutti si girano</span>
           <figure data-dark="1" className="ph sunset-p2 arch"><Image src="/media/aereo-tramonto.jpg" alt="Il club dall’alto al tramonto, con il mare e la costa" fill sizes="(max-width:860px) 70vw, 40vw" /></figure>
           <span className="d sunset-w" aria-hidden="true">dalla stessa parte.</span>
-          <figure data-dark="1" className="ph sunset-p3"><Image src="/media/scale-tramonto.jpg" alt="Le scale illuminate che salgono verso l’arco" fill sizes="(max-width:860px) 70vw, 36vw" /></figure>
         </motion.div>
       </motion.div>
     </section>

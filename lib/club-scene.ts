@@ -115,7 +115,7 @@ export class ClubScene {
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    this.camera = new THREE.PerspectiveCamera(30, 1, 2.5, 2600);
+    this.camera = new THREE.PerspectiveCamera(30, 1, 4, 2600);
     this.controls = new OrbitControls(this.camera, canvas);
     Object.assign(this.controls, { enableDamping: true, dampingFactor: 0.08, minDistance: 14, maxDistance: 80, maxPolarAngle: 1.42, enabled: !!opts.interactive, zoomToCursor: true });
     this.controls.addEventListener('change', () => { this.needs = true; });

@@ -149,6 +149,8 @@ export function buildSurroundings(phone: boolean, tables: { id: string; zone: st
   // --- Hedges. Box core plus clumps on top so it reads as a plant, not a wall
   const spans: Span[] = [];
   const line = (pts: P2[], y0: number, y1: number, w: number) => { for (let i = 1; i < pts.length; i++) spans.push({ a: pts[i - 1], b: pts[i], y0, y1, w }); };
+  // Backing behind the vine on the stage wall, so light doesn't come through the leaves
+  line([[4.2, -17.45], [-8.2, -17.45], [-20, -16.75]], 0.2, 4.45, 0.25);
   // Clean line between the Riva Deck side and the house lawn, closing the step between the two levels
   line([[-9.2, 19.25], [22.1, 23.85]], 0.1, 1.45, 0.85);
   // Sea side, one on every drop
@@ -269,7 +271,8 @@ export function buildSurroundings(phone: boolean, tables: { id: string; zone: st
   const white = new THREE.MeshLambertMaterial({ color: '#ece9df' });
   const wood = new THREE.MeshLambertMaterial({ color: '#8a6749' });
   const loungerParts: THREE.BufferGeometry[] = []; const loungerWood: THREE.BufferGeometry[] = [];
-  for (const [x, z, yaw] of [[-13.2, 16.6, 0.5], [-15.1, 16.3, 0.5], [-17.6, 16.9, -0.4]]) {
+  // Out in the open, between the entrance ramp and the bar, away from the way to the bathrooms
+  for (const [x, z, yaw] of [[-13.6, 10.6, 0.5], [-15.6, 10.2, 0.5], [-18.4, 11.2, -0.35]]) {
     const m = new THREE.Matrix4().compose(new THREE.Vector3(x, 0.8, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, yaw, 0)), new THREE.Vector3(1, 1, 1));
     const part = (list: THREE.BufferGeometry[], w: number, h: number, d: number, px: number, py: number, pz: number, tilt = 0) => {
       const g = new THREE.BoxGeometry(w, h, d); if (tilt) g.rotateX(tilt); g.translate(px, py, pz); g.applyMatrix4(m); list.push(g);
@@ -279,11 +282,22 @@ export function buildSurroundings(phone: boolean, tables: { id: string; zone: st
     part(loungerParts, 0.68, 0.09, 1.42, 0, 0.34, 0.28); part(loungerParts, 0.68, 0.09, 0.68, 0, 0.58, -0.72, 0.62);
   }
   add(mergeGeometries(loungerParts), white); add(mergeGeometries(loungerWood), wood);
-  const tableTop = new THREE.CylinderGeometry(0.3, 0.3, 0.05, 14); tableTop.translate(-14.2, 1.26, 18.1);
-  const tableLeg = new THREE.CylinderGeometry(0.03, 0.05, 0.42, 6); tableLeg.translate(-14.2, 1.03, 18.1);
+  const tableTop = new THREE.CylinderGeometry(0.3, 0.3, 0.05, 14); tableTop.translate(-14.7, 1.26, 12.2);
+  const tableLeg = new THREE.CylinderGeometry(0.03, 0.05, 0.42, 6); tableLeg.translate(-14.7, 1.03, 12.2);
   add(mergeGeometries([tableTop, tableLeg]), white);
+  // Low planting scattered on the big lawn around the pool, so it isn't one flat green sheet
+  const clusters: [number, number][] = [[6, 33], [12, 42], [18, 51], [9, 60], [-20, 62], [-30, 50], [-29, 28], [20, 33]];
+  const bushes = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 1), new THREE.MeshLambertMaterial({ flatShading: true }), clusters.length * 4);
+  clusters.forEach(([x, z], i) => {
+    for (let k = 0; k < 4; k++) {
+      const a = k * 2.4 + i; const r = 0.45 + rnd() * 0.4; const d = k ? 0.75 : 0;
+      dummy.rotation.set(0, a, 0); dummy.position.set(x + Math.cos(a) * d, 0.78 + r * 0.55, z + Math.sin(a) * d); dummy.scale.set(r, r * 0.8, r); dummy.updateMatrix();
+      bushes.setMatrixAt(i * 4 + k, dummy.matrix); bushes.setColorAt(i * 4 + k, tint.set(['#476737', '#365230', '#617b43', '#a64d88'][(k + i) % 4]));
+    }
+  });
+  group.add(bushes);
   // Pots: terracotta, a clipped shrub, a few flowers
-  const potSpots: [number, number, number][] = [[-11.2, 16.2, 1], [-11.4, 18.6, 0.8], [-19.6, 15.6, 1.1], [-20.6, 22.2, 0.8], [7.2, 22.3, 0.9], [11.4, 25.1, 0.9], [-19.4, 18.1, 0.75]];
+  const potSpots: [number, number, number][] = [[-11.2, 16.2, 1], [-11.4, 18.6, 0.8], [-19.6, 15.6, 1.1], [-20.6, 22.2, 0.8], [7.2, 22.3, 0.9], [11.4, 25.1, 0.9]];
   const pots = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.34, 0.24, 0.5, 12), new THREE.MeshLambertMaterial({ color: '#b5714f' }), potSpots.length);
   const shrubs = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 1), new THREE.MeshLambertMaterial({ color: '#46613a', flatShading: true }), potSpots.length);
   const flowers = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), new THREE.MeshLambertMaterial({ color: '#b05a98' }), potSpots.length * 4);
@@ -294,7 +308,7 @@ export function buildSurroundings(phone: boolean, tables: { id: string; zone: st
   });
   group.add(pots, shrubs, flowers);
 
-  // --- Road and the access apron up to the gate
+  // --- Road
   const roadPos: number[] = [];
   const HALF = 3;
   const samples = ROAD_POINTS;
@@ -310,12 +324,6 @@ export function buildSurroundings(phone: boolean, tables: { id: string; zone: st
   road.computeVertexNormals();
   const roadMat = new THREE.MeshLambertMaterial({ color: '#4c4d50', side: THREE.DoubleSide });
   add(road, roadMat);
-  const apron = new THREE.PlaneGeometry(3.4, 6.2);
-  apron.rotateX(-Math.PI / 2);
-  apron.rotateY(0.18);
-  apron.translate(-27.4, ROAD_Y + 0.02, 0.1);
-  add(apron, new THREE.MeshLambertMaterial({ color: '#8f8c84' }));
-
   // --- The gate: white, big and standing open, right where grey becomes white
   const gateParts: THREE.BufferGeometry[] = [];
   const bar = (w: number, h: number, d: number, m: THREE.Matrix4, x: number, y: number, z: number) => {

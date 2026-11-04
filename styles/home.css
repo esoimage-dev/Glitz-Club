@@ -29,12 +29,11 @@
 /* Sunset */
 .sunset { height: 520vh; position: relative; }
 .sunset-stick { position: sticky; top: 0; height: 100vh; height: 100lvh; overflow: hidden; display: flex; align-items: center; }
-.sunset-track { position: relative; display: flex; align-items: center; gap: clamp(30px, 6vw, 110px); padding-left: 44vw; width: max-content; will-change: transform; }
+.sunset-track { position: relative; display: flex; align-items: center; gap: clamp(30px, 6vw, 110px); padding: 0 6vw 0 44vw; width: max-content; will-change: transform; }
 .sunset-w { font-size: clamp(6rem, 25vw, 26rem); line-height: 1; white-space: nowrap; }
 .sunset-track figure { flex: none; margin: 0; }
 .sunset-p1 { width: 56vw; aspect-ratio: 3/2; max-height: 76vh; }
 .sunset-p2 { height: 82vh; aspect-ratio: 2/3; }
-.sunset-p3 { height: 72vh; aspect-ratio: 2/3; margin-right: 10vw !important; }
 
 /* Arch on */
 .archon { height: 420vh; position: relative; }
@@ -125,8 +124,7 @@
   .sunset { height: 620vh; }
   .sunset-p1 { width: 90vw; }
   .sunset-p2 { height: 62vh; }
-  .sunset-p3 { height: 62vh; }
-  .sunset-w { font-size: 34vw; }
+    .sunset-w { font-size: 34vw; }
   /* Sits about where the real arch appears in the photo, a touch left like the shot */
   .archon-svg { width: 92vw; left: 47%; bottom: auto; top: 25%; }
   .archon-h1 { margin-top: 24vh; }
