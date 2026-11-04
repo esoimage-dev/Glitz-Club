@@ -20,6 +20,7 @@ const centre = (id: ZoneId): [number, number, number] => {
 
 export default function TablePicker() {
   const canvas = useRef<HTMLCanvasElement>(null);
+  const stage = useRef<HTMLDivElement>(null);
   const scene = useRef<ClubScene | null>(null);
   const markers = useRef<Map<string, HTMLButtonElement>>(new Map());
   const [ready, setReady] = useState(false);
@@ -73,6 +74,41 @@ export default function TablePicker() {
 
   useEffect(() => { scene.current?.setTableStates(taken); }, [taken, ready]);
 
+  // Keyboard: arrows pan, space turns drag into pan. Left alone while typing or on a focused control.
+  useEffect(() => {
+    const held = new Set<string>();
+    const busy = (e: KeyboardEvent) => e.target instanceof HTMLElement && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
+    const apply = () => scene.current?.setPanInput(Number(held.has('ArrowRight')) - Number(held.has('ArrowLeft')), Number(held.has('ArrowUp')) - Number(held.has('ArrowDown')));
+    const down = (e: KeyboardEvent) => {
+      if (busy(e)) return;
+      if (e.key.startsWith('Arrow')) { e.preventDefault(); held.add(e.key); apply(); }
+      if (e.code === 'Space' && !(e.target instanceof HTMLButtonElement) && !(e.target instanceof HTMLAnchorElement)) { e.preventDefault(); scene.current?.setDragPan(true); canvas.current?.classList.add('is-pan'); }
+    };
+    const up = (e: KeyboardEvent) => {
+      if (e.key.startsWith('Arrow')) { held.delete(e.key); apply(); }
+      if (e.code === 'Space') { scene.current?.setDragPan(false); canvas.current?.classList.remove('is-pan'); }
+    };
+    const blur = () => { held.clear(); apply(); scene.current?.setDragPan(false); canvas.current?.classList.remove('is-pan'); };
+    addEventListener('keydown', down); addEventListener('keyup', up); addEventListener('blur', blur);
+    return () => { removeEventListener('keydown', down); removeEventListener('keyup', up); removeEventListener('blur', blur); };
+  }, []);
+
+  // A pinch or wheel over a table marker belongs to the map: without this the browser zooms the whole page.
+  useEffect(() => {
+    const el = stage.current; if (!el) return;
+    const wheel = (e: WheelEvent) => {
+      if (e.target === canvas.current) { e.preventDefault(); return; }
+      e.preventDefault();
+      canvas.current?.dispatchEvent(new WheelEvent('wheel', e));
+    };
+    const stopZoom = (e: WheelEvent) => { if (e.ctrlKey) e.preventDefault(); };
+    const gesture = (e: Event) => e.preventDefault();
+    el.addEventListener('wheel', wheel, { passive: false });
+    document.addEventListener('wheel', stopZoom, { passive: false });
+    document.addEventListener('gesturestart', gesture);
+    return () => { el.removeEventListener('wheel', wheel); document.removeEventListener('wheel', stopZoom); document.removeEventListener('gesturestart', gesture); };
+  }, []);
+
   const nudge = () => { const s = scene.current; if (s) s.onFrame?.(); };
   useEffect(nudge, [zone, table, ready]);
 
@@ -96,7 +132,7 @@ export default function TablePicker() {
 
   return (
     <main className="tp-page tone-night" data-tone="night">
-      <div className="tp-stage">
+      <div ref={stage} className="tp-stage">
         <canvas ref={canvas} className="tp-canvas" aria-label="Modello 3D del Glitz Club" />
         {!ready && !noGL && <p className="tp-loading d d-l" role="status">Accendiamo il club…</p>}
         {noGL && <p className="tp-loading">Questo dispositivo non mostra il 3D. Scegli zona e tavolo dall’elenco.</p>}
@@ -108,7 +144,18 @@ export default function TablePicker() {
           ))}
           {ready && zone && visible.map((t) => (
             <button key={t.id} ref={(r) => { if (r) markers.current.set(t.id, r); else markers.current.delete(t.id); }} className="tp-tm" data-taken={taken.has(t.id)} data-sel={table === t.id} disabled={taken.has(t.id)} aria-label={`Tavolo ${t.id}${taken.has(t.id) ? ', occupato' : ''}`} onClick={() => pickTable(t.id)}>
-              {t.id}
+              <span>{t.id}</span>
+            </button>
+          ))}
+        </div>
+        <p className="tp-help small">Trascina per ruotare. Frecce per spostarti, oppure barra spaziatrice e trascina. Rotella o pizzico per lo zoom.</p>
+        <div className="tp-pad" role="group" aria-label="Sposta la mappa">
+          {([['up', 0, 1, 'Avanti'], ['left', -1, 0, 'A sinistra'], ['right', 1, 0, 'A destra'], ['down', 0, -1, 'Indietro']] as const).map(([k, x, z, label]) => (
+            <button key={k} type="button" className={`tp-pad-${k}`} aria-label={label}
+              onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); scene.current?.setPanInput(x, z); }}
+              onPointerUp={() => scene.current?.setPanInput(0, 0)} onPointerCancel={() => scene.current?.setPanInput(0, 0)}
+              onContextMenu={(e) => e.preventDefault()}>
+              <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 8l4-4 4 4" fill="none" stroke="currentColor" strokeWidth="1.5" /></svg>
             </button>
           ))}
         </div>
@@ -177,7 +224,7 @@ export default function TablePicker() {
             <button className="link-u small" onClick={() => setSent(false)}>Modifica la richiesta</button>
           </div>
         )}
-        <p className="small dim tp-note">Mappa ricostruita dalla planimetria. Disponibilità simulata in questa anteprima. <Link href="/info" className="link-u">Domande?</Link></p>
+        <p className="small dim tp-note"><span className="tp-help-touch">Un dito ruota, due dita zoomano, le frecce spostano. </span>Mappa ricostruita dalla planimetria. Disponibilità simulata in questa anteprima. <Link href="/info" className="link-u">Domande?</Link></p>
       </aside>
     </main>
   );

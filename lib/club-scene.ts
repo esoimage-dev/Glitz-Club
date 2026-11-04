@@ -7,6 +7,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import tablesData from './tables.json';
+import { buildSurroundings } from './club-surroundings';
 import type { ZoneId } from './data';
 
 export type Mood = 'night' | 'sunset';
@@ -25,27 +26,66 @@ export const SHOTS: Record<'overview' | 'arch' | 'sea' | ZoneId, Shot> = {
   seaview: { pos: [-4, 9, 16], target: [12, 0, 6] },
 };
 
-const SKY: Record<Mood, [string, string, string, string]> = {
-  night: ['#01010a', '#080824', '#1a1140', '#34184f'],
-  sunset: ['#2b2a5e', '#8a4c88', '#ef8a62', '#ffd2a0'],
-};
-
 const LED = [new THREE.Color('#5a5cf7'), new THREE.Color('#d41fd0'), new THREE.Color('#ff8a2a')];
 const ledAt = (t: number) => (t < 0.55 ? LED[0].clone().lerp(LED[1], t / 0.55) : LED[1].clone().lerp(LED[2], (t - 0.55) / 0.45));
 
 const isPhone = () => innerWidth < 860;
 
-function skyTexture(mood: Mood) {
-  const c = document.createElement('canvas');
-  c.width = 4; c.height = 512;
-  const g = c.getContext('2d')!;
-  const grd = g.createLinearGradient(0, 0, 0, 512);
-  const s = SKY[mood];
-  grd.addColorStop(0, s[0]); grd.addColorStop(0.35, s[1]); grd.addColorStop(0.62, s[2]); grd.addColorStop(0.78, s[3]); grd.addColorStop(1, s[3]);
-  g.fillStyle = grd; g.fillRect(0, 0, 4, 512);
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  return t;
+// Colours bottom to top, plus the glow around where the sun went down, out to sea behind the island.
+const SKY: Record<Mood, { horizon: string; mid: string; top: string; glow: string; glowPower: number }> = {
+  sunset: { horizon: '#e9843f', mid: '#cf5f32', top: '#6d3f46', glow: '#ffa24d', glowPower: 0.75 },
+  night: { horizon: '#232659', mid: '#10143a', top: '#050822', glow: '#3a2f6e', glowPower: 0.35 },
+};
+
+/** A real dome, so the horizon stays on the horizon when the camera tilts. */
+function buildSky() {
+  const uniforms = {
+    horizon: { value: new THREE.Color() }, mid: { value: new THREE.Color() }, top: { value: new THREE.Color() },
+    glow: { value: new THREE.Color() }, glowPower: { value: 0 }, sun: { value: new THREE.Vector3(0.82, 0.02, -0.57).normalize() },
+  };
+  const dome = new THREE.Mesh(
+    new THREE.SphereGeometry(1000, 32, 16),
+    new THREE.ShaderMaterial({
+      uniforms, side: THREE.BackSide, depthWrite: false, depthTest: false, fog: false,
+      vertexShader: 'varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+      fragmentShader: `
+        uniform vec3 horizon, mid, top, glow, sun; uniform float glowPower; varying vec3 vDir;
+        void main(){
+          vec3 d = normalize(vDir); float h = max(d.y, 0.0);
+          vec3 c = mix(horizon, mid, smoothstep(0.0, 0.16, h));
+          c = mix(c, top, smoothstep(0.14, 0.62, h));
+          float g = pow(max(dot(d, sun), 0.0), 7.0);
+          c = mix(c, glow, g * glowPower);
+          gl_FragColor = vec4(c, 1.0);
+          #include <tonemapping_fragment>
+          #include <colorspace_fragment>
+        }`,
+    }),
+  );
+  dome.renderOrder = -2; dome.frustumCulled = false;
+
+  let seed = 97; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  const pos: number[] = []; const col: number[] = [];
+  for (let i = 0; i < 1100; i++) {
+    const y = 0.05 + Math.pow(rnd(), 0.8) * 0.95; const a = rnd() * Math.PI * 2; const r = Math.sqrt(1 - y * y);
+    pos.push(Math.cos(a) * r * 950, y * 950, Math.sin(a) * r * 950);
+    const b = 0.35 + Math.pow(rnd(), 3) * 1.4; col.push(b, b, b * (0.92 + rnd() * 0.12));
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  const stars = new THREE.Points(geo, new THREE.PointsMaterial({ size: 2, sizeAttenuation: false, vertexColors: true, transparent: true, depthWrite: false, depthTest: false, fog: false }));
+  stars.renderOrder = -1; stars.frustumCulled = false;
+
+  const group = new THREE.Group(); group.add(dome, stars);
+  return {
+    group, stars,
+    set(mood: Mood) {
+      const k = SKY[mood];
+      uniforms.horizon.value.set(k.horizon); uniforms.mid.value.set(k.mid); uniforms.top.value.set(k.top); uniforms.glow.value.set(k.glow); uniforms.glowPower.value = k.glowPower;
+      stars.visible = mood === 'night';
+    },
+  };
 }
 
 /** The friend's model, relit: renders on demand so an idle page costs nothing. */
@@ -74,10 +114,11 @@ export class ClubScene {
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    this.camera = new THREE.PerspectiveCamera(30, 1, 0.5, 2600);
+    this.camera = new THREE.PerspectiveCamera(30, 1, 2.5, 2600);
     this.controls = new OrbitControls(this.camera, canvas);
-    Object.assign(this.controls, { enableDamping: true, dampingFactor: 0.08, minDistance: 14, maxDistance: 130, maxPolarAngle: 1.42, enabled: !!opts.interactive, zoomToCursor: true });
+    Object.assign(this.controls, { enableDamping: true, dampingFactor: 0.08, minDistance: 14, maxDistance: 105, maxPolarAngle: 1.42, enabled: !!opts.interactive, zoomToCursor: true });
     this.controls.addEventListener('change', () => { this.needs = true; });
+    this.interactive = !!opts.interactive;
     // OrbitControls sets touch-action:none on connect, even disabled: that alone kills page scroll on phones.
     if (!opts.interactive) this.controls.disconnect();
     canvas.addEventListener('webglcontextlost', this.onContextLost);
@@ -95,7 +136,7 @@ export class ClubScene {
       l.position.set(x, y, z); return l;
     });
     this.lights = { hemi, sun, floor, strips };
-    this.scene.add(hemi, sun, ...floor, ...strips);
+    this.scene.add(hemi, sun, ...floor, ...strips, this.sky.group);
 
     if (!low) {
       this.renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
@@ -126,6 +167,10 @@ export class ClubScene {
   private pathGoal = 0;
   private pathNow: number | null = null;
   private lastLoop = 0;
+  private sky = buildSky();
+  private surroundings: ReturnType<typeof buildSurroundings> | null = null;
+  private panInput = { x: 0, z: 0 };
+  private interactive = false;
 
   async load(url = `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/models/${isPhone() ? 'glitz-mobile' : 'glitz'}.glb`) {
     const loader = new GLTFLoader();
@@ -134,6 +179,11 @@ export class ClubScene {
     const gltf = await loader.loadAsync(url);
     this.scene.add(gltf.scene);
     gltf.scene.updateMatrixWorld(true);
+    const down = new THREE.Raycaster(); const dir = new THREE.Vector3(0, -1, 0);
+    const topAt = (x: number, z: number) => { down.set(new THREE.Vector3(x, 8, z), dir); return down.intersectObject(gltf.scene, true)[0]?.point.y ?? 1; };
+    this.surroundings = buildSurroundings(isPhone(), TABLES, topAt);
+    this.surroundings.setMood(this.mood);
+    this.scene.add(this.surroundings.group);
 
     const arch = new THREE.Box3();
     const ledMats: { m: THREE.MeshStandardMaterial; x: number }[] = [];
@@ -178,15 +228,15 @@ export class ClubScene {
 
   setMood(mood: Mood) {
     this.mood = mood;
-    (this.scene.background as THREE.Texture | null)?.dispose?.();
-    this.scene.background = skyTexture(mood);
+    this.sky.set(mood);
     const night = mood === 'night';
-    this.scene.fog = new THREE.Fog(night ? '#0d0a2a' : '#ef9a74', 140, 760);
+    this.scene.fog = new THREE.Fog(night ? '#12153a' : '#d97e4a', night ? 170 : 220, night ? 820 : 1150);
     this.renderer.toneMappingExposure = night ? 1.1 : 0.95;
     const { hemi, sun, floor, strips } = this.lights;
     hemi.color.set(night ? '#a9b2ee' : '#f6e8ee'); hemi.groundColor.set(night ? '#14142c' : '#5a4a68'); hemi.intensity = night ? 1.25 : 1.5;
     sun.color.set(night ? '#a9b4ff' : '#ffc08f'); sun.intensity = night ? 0.35 : 1.5;
     this.paintSea();
+    this.surroundings?.setMood(mood);
     floor.forEach((l) => { l.intensity = night ? 26 : 5; });
     strips.forEach((l) => { l.intensity = night ? 14 : 4; });
     this.needs = true;
@@ -194,8 +244,8 @@ export class ClubScene {
 
   private paintSea() {
     this.seaMats.forEach((m) => {
-      m.metalness = 0; m.roughness = 0.75;
-      m.color.set(this.mood === 'night' ? '#070a26' : '#c7695f');
+      m.metalness = 0; m.roughness = 0.75; m.fog = false; m.needsUpdate = true;
+      m.color.set(this.mood === 'night' ? '#070a26' : '#1c5a7a');
     });
   }
 
@@ -260,6 +310,37 @@ export class ClubScene {
     this.needs = true;
   }
 
+  /** Arrow keys and on-screen arrows: x is right, z is forward on the ground, as seen from the camera. */
+  setPanInput(x: number, z: number) { this.panInput = { x, z }; this.fly = null; }
+
+  /** Holding space turns left drag into panning. */
+  setDragPan(on: boolean) { this.controls.mouseButtons.LEFT = on ? THREE.MOUSE.PAN : THREE.MOUSE.ROTATE; }
+
+  /** Panning stays around the club: the target can't leave this box, however you drag or zoom. */
+  private clampTarget() {
+    const t = this.controls.target;
+    const x = THREE.MathUtils.clamp(t.x, -30, 32);
+    const y = THREE.MathUtils.clamp(t.y, -2, 6);
+    const z = THREE.MathUtils.clamp(t.z, -32, 44);
+    if (x !== t.x || y !== t.y || z !== t.z) {
+      this.camera.position.x += x - t.x; this.camera.position.y += y - t.y; this.camera.position.z += z - t.z;
+      t.set(x, y, z);
+    }
+  }
+
+  private applyPanInput(dt: number) {
+    const { x, z } = this.panInput;
+    if (!x && !z) return;
+    const forward = new THREE.Vector3().subVectors(this.controls.target, this.camera.position);
+    const speed = forward.length() * 0.55 * dt;
+    forward.y = 0; forward.normalize();
+    const right = new THREE.Vector3(-forward.z, 0, forward.x);
+    const move = right.multiplyScalar(x * speed).addScaledVector(forward, z * speed);
+    this.camera.position.add(move);
+    this.controls.target.add(move);
+    this.needs = true;
+  }
+
   /** Camera framing for one table: close, low, looking through it towards the sea. */
   shotForTable(id: string): Shot {
     const t = TABLES.find((x) => x.id === id)!;
@@ -292,6 +373,7 @@ export class ClubScene {
 
   private draw() {
     this.needs = false;
+    this.sky.group.position.copy(this.camera.position);
     if (this.composer) this.composer.render(); else this.renderer.render(this.scene, this.camera);
     this.onFrame?.();
   }
@@ -327,7 +409,11 @@ export class ClubScene {
       this.needs = true;
       if (t === 1) this.fly = null;
     }
-    if (this.controls.enabled) this.controls.update(); else if (this.fly) this.camera.lookAt(this.controls.target);
+    if (this.interactive) {
+      this.applyPanInput(dt);
+      this.controls.update();
+      if (!this.fly) this.clampTarget();
+    } else if (this.fly) this.camera.lookAt(this.controls.target);
     if (!this.needs) return;
     this.adapt(now);
     this.draw();

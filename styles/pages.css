@@ -66,10 +66,29 @@
 .tp-markers button { position: absolute; left: 0; top: 0; pointer-events: auto; white-space: nowrap; }
 .tp-zm { font-family: var(--display); font-size: clamp(1.4rem, 2.4vw, 2.2rem); line-height: 1; padding: 8px 16px 10px; color: #fff; border-radius: 999px; background: rgba(0,0,0,.45); box-shadow: inset 0 0 0 1px rgba(255,255,255,.5); backdrop-filter: blur(6px); transition: background .3s, color .3s; }
 .tp-zm:hover { background: #fff; color: #000; }
-.tp-tm { min-width: 40px; height: 28px; padding: 0 8px; font-size: 12px; font-weight: 600; border-radius: 999px; background: #fff; color: #000; transition: background .25s, color .25s, scale .25s; }
-.tp-tm:hover { scale: 1.12; }
-.tp-tm[data-sel='true'] { background: var(--led); color: #fff; scale: 1.2; }
-.tp-tm[data-taken='true'] { background: rgba(0,0,0,.6); color: rgba(255,255,255,.55); text-decoration: line-through; cursor: not-allowed; }
+/* The button only carries the position (set from JS). Scaling lives on the inner span: scaling the
+   positioned element would also multiply its translate and throw it out from under the cursor. */
+.tp-tm { padding: 0; background: none; }
+.tp-tm span { display: flex; align-items: center; justify-content: center; min-width: 40px; height: 28px; padding: 0 8px; font-size: 12px; font-weight: 600; border-radius: 999px; background: #fff; color: #000; transition: background .25s, color .25s, scale .25s; }
+.tp-tm:hover span { scale: 1.12; }
+.tp-tm[data-sel='true'] span { background: var(--led); color: #fff; scale: 1.2; }
+.tp-tm[data-taken='true'] span { background: rgba(0,0,0,.6); color: rgba(255,255,255,.55); text-decoration: line-through; cursor: not-allowed; }
+.tp-tm[data-taken='true']:hover span { scale: 1; }
+.tp-canvas.is-pan { cursor: grab; }
+.tp-help { position: absolute; left: 190px; right: 20px; bottom: 30px; pointer-events: none; text-shadow: 0 1px 8px rgba(0,0,0,.7); }
+.tp-help-touch { display: none; }
+.tp-pad { display: none; position: absolute; right: 12px; bottom: 12px; width: 132px; height: 132px; }
+.tp-pad button { position: absolute; width: 44px; height: 44px; border-radius: 50%; background: rgba(0,0,0,.6); color: #fff; box-shadow: inset 0 0 0 1px rgba(255,255,255,.45); display: grid; place-items: center; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.tp-pad button:active { background: #fff; color: #000; }
+.tp-pad svg { width: 16px; height: 16px; }
+.tp-pad-up { left: 44px; top: 0; }
+.tp-pad-down { left: 44px; bottom: 0; }
+.tp-pad-down svg { rotate: 180deg; }
+.tp-pad-left { left: 0; top: 44px; }
+.tp-pad-left svg { rotate: -90deg; }
+.tp-pad-right { right: 0; top: 44px; }
+.tp-pad-right svg { rotate: 90deg; }
+@media (hover: none) { .tp-pad { display: block; } .tp-help { display: none; } .tp-help-touch { display: inline; } }
 .tp-mood { position: absolute; left: var(--gutter); bottom: 22px; display: flex; padding: 4px; border-radius: 999px; background: rgba(0,0,0,.55); backdrop-filter: blur(6px); font-size: var(--t-xs); }
 .tp-mood button { min-height: 34px; padding: 0 14px; border-radius: 999px; }
 .tp-mood [aria-pressed='true'] { background: #fff; color: #000; }
@@ -168,6 +187,7 @@
   .evd-actions .btn { flex: 1 1 100%; }
   .tp-page { grid-template-columns: 1fr; grid-template-rows: 48svh 1fr; }
   .tp-panel { padding: 18px 16px 18px; }
+  .tp-help { display: none; }
   .tp-zones .d { font-size: 1.9rem; }
   .tp-zm { font-size: 1.1rem; padding: 5px 11px 7px; }
   .tk-pass { padding: 70px 26px 24px; }

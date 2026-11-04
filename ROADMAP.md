@@ -14,6 +14,12 @@
 - Nome zona: "Sea View" o "Seat View"
 - Si può scrivere che è una villa privata?
 
+## Come è fatto il 3D
+- `lib/club-surroundings.ts`: tutto il contesto, in codice (terrazzamenti, scogliera, siepi, cancello, strada, case, palme, luci esterne, abat-jour). Si modifica e basta.
+- `lib/club-scene.ts`: luci, cielo, camere, panning e relativi limiti.
+- `scripts/model-source/glitz-base.html`: il modello originale con le nostre correzioni (scale, bar, alberi). Se cambia va riesportato con `GlitzMap.exportGLB()`, compresso con `gltf-transform optimize` (meshopt, simplify-error 0.008, join e flatten disattivati), copiato in `public/models/glitz.glb`; poi `node scripts/mobile-model.mjs`.
+- Il contesto è stilizzato e non segue la mappa reale, per scelta.
+
 ## Prossimi passi
 1. Video: slot pronti in `components/VideoTile.tsx` e nella home
 2. 3D: modifiche al modello (lista da Edoardo), rifinire materiali e tramonto, inquadrature sul mare. Su telefono si usa `public/models/glitz-mobile.glb`: va rigenerato con `node scripts/mobile-model.mjs` a ogni modifica del modello

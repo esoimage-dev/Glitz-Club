@@ -1,0 +1,409 @@
+import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+
+/*
+ * Everything around the club, built in code on top of the model: terraces and cliff towards the sea,
+ * perimeter hedge, the open white gate, the road and a stylised neighbourhood.
+ * World: +x is the sea, -x the road, y up, metres. Deliberately low-poly and muted: the club keeps the attention.
+ */
+
+type P2 = [number, number];
+export type Mood = 'night' | 'sunset';
+
+const T1 = -0.9;  // first lawn past the last seats, lowered
+const T2 = -2.3;
+const T3 = -3.7;  // lighter lawn, then the cliff
+const EDGE_1 = 30;
+const EDGE_2 = 39;
+const EDGE_3 = 47;
+const NORTH = -36;
+const SOUTH = 75.5;
+const ROAD_Y = 0.82;
+
+// Where the grey access road meets the white ramp (planimetria, plan 570,946 and 650,958)
+const GATE_A: P2 = [-22.5, -0.45];
+const GATE_B: P2 = [-23.05, 3.1];
+
+const PROPERTY: P2[] = [[-23.6, -20], [16, NORTH - 0.5], [48, NORTH - 0.5], [48, SOUTH + 0.5], [25, 72], [-36.2, 72], [-36.2, 17.3], [-28.2, 17], [-24.4, 3.4], [-23.9, -0.9]];
+
+const ROAD_LINE = new THREE.CatmullRomCurve3([[-90, -420], [-62, -260], [-42, -120], [-33, -40], [-31, 0], [-38.5, 22], [-42, 60], [-56, 140], [-92, 260], [-120, 420]].map(([x, z]) => new THREE.Vector3(x, 0, z)), false, 'centripetal');
+const ROAD_POINTS = ROAD_LINE.getPoints(170);
+
+const smooth = (a: number, b: number, x: number) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+const noise = (x: number, z: number) => Math.sin(x * 0.13 + 1.3) * Math.cos(z * 0.11 - 0.7) + 0.5 * Math.sin(x * 0.31 + z * 0.23) + 0.25 * Math.sin(x * 0.71 - z * 0.67);
+const coast = (z: number) => 54 + 3.4 * Math.sin(z / 37) + 1.6 * Math.sin(z / 11) + ((z / 620) ** 2) * 90;
+
+function inside(p: P2[], x: number, z: number) {
+  let c = false;
+  for (let i = 0, j = p.length - 1; i < p.length; j = i++) {
+    if (p[i][1] > z !== p[j][1] > z && x < ((p[j][0] - p[i][0]) * (z - p[i][1])) / (p[j][1] - p[i][1]) + p[i][0]) c = !c;
+  }
+  return c;
+}
+
+const roadDistance = (x: number, z: number) => {
+  let best = Infinity;
+  for (const p of ROAD_POINTS) { const d = (p.x - x) ** 2 + (p.z - z) ** 2; if (d < best) best = d; }
+  return Math.sqrt(best);
+};
+
+function terrain(x: number, z: number) {
+  const seaward = smooth(10, 48, x);
+  let y = lerp(0.74, T3 - 0.1, seaward);
+  if (x < -48) y += ((-48 - x) / 340) ** 1.5 * 74 * (0.74 + 0.26 * noise(x * 0.4, z * 0.4)) + smooth(-48, -110, x) * noise(x, z) * 1.6;
+  const away = Math.max(0, Math.abs(z - 20) - 140);
+  if (x < 20) y += (away / 500) ** 1.6 * 16;
+  const edge = coast(z);
+  if (x > edge - 6) {
+    const d = (x - (edge - 6)) / 13;
+    const jag = noise(x * 2.6, z * 2.6) * 0.9 * (1 - Math.abs(d * 2 - 1));
+    y = lerp(y, -11, smooth(0, 1, d)) + jag;
+  }
+  return y;
+}
+
+function ground(x: number, z: number) {
+  if (x > 15 && x < EDGE_3 + 0.5 && z > NORTH && z < SOUTH) return -6; // under the terraces
+  if (inside(PROPERTY, x, z)) return -0.1;
+  const y = terrain(x, z);
+  const d = roadDistance(x, z);
+  if (d < 22) {
+    // The road cuts a level bench: nearest centre height, blending back into the hillside
+    let best = ROAD_POINTS[0]; let bd = Infinity;
+    for (const p of ROAD_POINTS) { const k = (p.x - x) ** 2 + (p.z - z) ** 2; if (k < bd) { bd = k; best = p; } }
+    return lerp(roadHeight(best.x, best.z) - 0.08, y, smooth(5, 22, d));
+  }
+  return y;
+}
+const roadHeight = (x: number, z: number) => Math.max(ROAD_Y, terrain(x, z));
+
+/** Non-uniform grid: fine around the club, coarse to the horizon. */
+function buildGround(step: number) {
+  const axis = (from: number, to: number, a: number, b: number) => {
+    const out: number[] = [];
+    for (let v = from; v < a; v += 48) out.push(v);
+    for (let v = a; v < b; v += step) out.push(v);
+    for (let v = b; v <= to; v += 48) out.push(v);
+    return out;
+  };
+  const xs = axis(-560, 90, -70, 76);
+  const zs = axis(-900, 900, -70, 110);
+  const pos: number[] = []; const col: number[] = []; const c = new THREE.Color();
+  const grass = new THREE.Color('#3f5233'); const grassB = new THREE.Color('#566642'); const rock = new THREE.Color('#857a68'); const rockB = new THREE.Color('#5f574a');
+  const vert = (x: number, z: number) => { pos.push(x, ground(x, z), z); };
+  const paint = (cx: number, cy: number, cz: number) => {
+    const edge = coast(cz);
+    const r = smooth(edge - 4, edge, cx);
+    c.copy(grass).lerp(grassB, 0.5 + 0.5 * noise(cx * 0.5, cz * 0.5));
+    if (r > 0) c.lerp(rock, r).lerp(rockB, smooth(-5, -11, cy) * 0.5 + 0.2 * Math.abs(noise(cx * 3, cz * 3)));
+    for (let k = 0; k < 3; k++) col.push(c.r, c.g, c.b);
+  };
+  for (let i = 0; i < xs.length - 1; i++) for (let j = 0; j < zs.length - 1; j++) {
+    const [x0, x1, z0, z1] = [xs[i], xs[i + 1], zs[j], zs[j + 1]];
+    for (const [a, b, d] of [[[x0, z0], [x0, z1], [x1, z0]], [[x1, z0], [x0, z1], [x1, z1]]] as P2[][]) {
+      vert(a[0], a[1]); vert(b[0], b[1]); vert(d[0], d[1]);
+      const cx = (a[0] + b[0] + d[0]) / 3; const cz = (a[1] + b[1] + d[1]) / 3;
+      paint(cx, ground(cx, cz), cz);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  g.computeVertexNormals();
+  return g;
+}
+
+/** A flat lawn with visible stone sides: its own retaining wall. */
+function plate(points: P2[], y: number, depth: number) {
+  const shape = new THREE.Shape(points.map(([x, z]) => new THREE.Vector2(x, -z)));
+  const g = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false });
+  g.rotateX(-Math.PI / 2);
+  g.translate(0, y - depth, 0);
+  return g;
+}
+
+const wave = (base: number, z: number, amp = 1.1) => base + amp * Math.sin(z / 17 + base);
+const edgeLine = (base: number, n = 12): P2[] => Array.from({ length: n + 1 }, (_, i) => { const z = NORTH + ((SOUTH - NORTH) * i) / n; return [wave(base, z), z]; });
+
+type Span = { a: P2; b: P2; y0: number; y1: number; w: number };
+
+export function buildSurroundings(phone: boolean, tables: { id: string; zone: string; p: [number, number, number] }[], topAt: (x: number, z: number) => number) {
+  const group = new THREE.Group();
+  group.name = 'Contesto';
+  let seed = 41;
+  const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  const flat = (color: string) => new THREE.MeshLambertMaterial({ color, flatShading: true });
+  const add = (geo: THREE.BufferGeometry, mat: THREE.Material | THREE.Material[]) => { const m = new THREE.Mesh(geo, mat); group.add(m); return m; };
+
+  add(buildGround(phone ? 3.5 : 2), new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }));
+
+  // --- Terraces. Stone sides, lawn getting lighter towards the sea
+  const stone = flat('#cfc9b8');
+  const lawn = (c: string) => [flat(c), stone];
+  const reversed = (l: P2[]) => [...l].reverse();
+  add(plate([[15.2, NORTH], ...edgeLine(EDGE_1), [25, SOUTH], [25.2, 67.2], [22.2, 24], [12.6, 20.4], [16.7, -23]], T1, 4), lawn('#46603a'));
+  add(plate([...reversed(edgeLine(EDGE_2)), ...edgeLine(EDGE_1)], T2, 4), lawn('#587243'));
+  add(plate([...reversed(edgeLine(EDGE_3, 12)), ...edgeLine(EDGE_2)], T3, 7), lawn('#74894f'));
+
+  // --- Hedges. Box core plus clumps on top so it reads as a plant, not a wall
+  const spans: Span[] = [];
+  const line = (pts: P2[], y0: number, y1: number, w: number) => { for (let i = 1; i < pts.length; i++) spans.push({ a: pts[i - 1], b: pts[i], y0, y1, w }); };
+  // Sea side, one on every drop
+  line([[16.9, -23], [12.9, 20.4]], T1, 0.75, 0.9);
+  line([[12.9, 20.4], [22.5, 24], [25.5, 67.2], [25.5, SOUTH]], T1, 1.15, 0.9);
+  line(edgeLine(EDGE_1), T2, T1 + 1, 0.9);
+  line(edgeLine(EDGE_2), T3, T2 + 1, 0.9);
+  // Perimeter: road side and both flanks, stepping down with the terraces
+  line([[-23.9, -0.9], [-23.6, -20], [15.6, NORTH]], -1.5, 3.1, 1.3);
+  line([[15.6, NORTH], [wave(EDGE_1, NORTH), NORTH]], -5, T1 + 2.3, 1.3);
+  line([[wave(EDGE_1, NORTH), NORTH], [wave(EDGE_2, NORTH), NORTH]], -5, T2 + 2.3, 1.3);
+  line([[wave(EDGE_2, NORTH), NORTH], [47, NORTH]], -8, T3 + 2.3, 1.3);
+  line([[-24.4, 3.5], [-28.2, 17], [-36.2, 17.3], [-36.2, 72], [25.5, 72]], -1.5, 3.1, 1.3);
+  line([[25.5, SOUTH], [wave(EDGE_1, SOUTH), SOUTH]], -5, T1 + 2.3, 1.3);
+  line([[wave(EDGE_1, SOUTH), SOUTH], [wave(EDGE_2, SOUTH), SOUTH]], -5, T2 + 2.3, 1.3);
+  line([[wave(EDGE_2, SOUTH), SOUTH], [47, SOUTH]], -8, T3 + 2.3, 1.3);
+
+  const dummy = new THREE.Object3D(); const tint = new THREE.Color();
+  const hedgeShades = ['#2c4227', '#34492c', '#3b5230'];
+  const box = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial(), spans.length);
+  const clumpSpacing = phone ? 2.6 : 1.5;
+  const totalClumps = spans.reduce((n, s) => n + Math.ceil(Math.hypot(s.b[0] - s.a[0], s.b[1] - s.a[1]) / clumpSpacing), 0);
+  const clumps = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), new THREE.MeshLambertMaterial({ flatShading: true }), totalClumps);
+  let ci = 0;
+  spans.forEach((s, i) => {
+    const dx = s.b[0] - s.a[0]; const dz = s.b[1] - s.a[1]; const len = Math.hypot(dx, dz);
+    dummy.position.set((s.a[0] + s.b[0]) / 2, (s.y0 + s.y1) / 2, (s.a[1] + s.b[1]) / 2);
+    dummy.rotation.set(0, -Math.atan2(dz, dx), 0);
+    dummy.scale.set(len + s.w * 0.4, s.y1 - s.y0, s.w);
+    dummy.updateMatrix();
+    box.setMatrixAt(i, dummy.matrix);
+    box.setColorAt(i, tint.set(hedgeShades[i % 3]));
+    const n = Math.ceil(len / clumpSpacing);
+    for (let k = 0; k < n; k++) {
+      const t = (k + 0.5) / n;
+      dummy.position.set(s.a[0] + dx * t + (rnd() - 0.5) * 0.3, s.y1 - 0.05 + rnd() * 0.12, s.a[1] + dz * t + (rnd() - 0.5) * 0.3);
+      dummy.rotation.set(rnd() * 3, rnd() * 3, 0);
+      const r = s.w * (0.5 + rnd() * 0.18) * (phone ? 1.3 : 1);
+      dummy.scale.set(r, r * 0.62, r);
+      dummy.updateMatrix();
+      clumps.setMatrixAt(ci, dummy.matrix);
+      clumps.setColorAt(ci, tint.set(hedgeShades[Math.floor(rnd() * 3)]));
+      ci++;
+    }
+  });
+  group.add(box, clumps);
+
+  // --- Road and the access apron up to the gate
+  const roadPos: number[] = [];
+  const HALF = 3;
+  const samples = ROAD_POINTS;
+  for (let i = 0; i < samples.length - 1; i++) {
+    const a = samples[i]; const b = samples[i + 1];
+    const dir = new THREE.Vector3().subVectors(b, a).normalize();
+    const nx = -dir.z * HALF; const nz = dir.x * HALF;
+    const ya = roadHeight(a.x, a.z); const yb = roadHeight(b.x, b.z);
+    roadPos.push(a.x + nx, ya, a.z + nz, a.x - nx, ya, a.z - nz, b.x + nx, yb, b.z + nz, b.x + nx, yb, b.z + nz, a.x - nx, ya, a.z - nz, b.x - nx, yb, b.z - nz);
+  }
+  const road = new THREE.BufferGeometry();
+  road.setAttribute('position', new THREE.Float32BufferAttribute(roadPos, 3));
+  road.computeVertexNormals();
+  const roadMat = new THREE.MeshLambertMaterial({ color: '#4c4d50', side: THREE.DoubleSide });
+  add(road, roadMat);
+  const apron = new THREE.PlaneGeometry(3.4, 6.2);
+  apron.rotateX(-Math.PI / 2);
+  apron.rotateY(0.18);
+  apron.translate(-27.4, ROAD_Y + 0.02, 0.1);
+  add(apron, new THREE.MeshLambertMaterial({ color: '#8f8c84' }));
+
+  // --- The gate: white, big and standing open, right where grey becomes white
+  const gateParts: THREE.BufferGeometry[] = [];
+  const bar = (w: number, h: number, d: number, m: THREE.Matrix4, x: number, y: number, z: number) => {
+    const g = new THREE.BoxGeometry(w, h, d); g.translate(x, y, z); g.applyMatrix4(m); gateParts.push(g);
+  };
+  const gateDir = new THREE.Vector2(GATE_B[0] - GATE_A[0], GATE_B[1] - GATE_A[1]);
+  const gateWidth = gateDir.length();
+  const yaw = -Math.atan2(gateDir.y, gateDir.x);
+  const GY = 0.8;
+  for (const [side, post] of [[1, GATE_A], [-1, GATE_B]] as [number, P2][]) {
+    const m = new THREE.Matrix4().compose(new THREE.Vector3(post[0], GY, post[1]), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, yaw, 0)), new THREE.Vector3(1, 1, 1));
+    bar(0.62, 3.1, 0.62, m, -side * 0.31, 1.55, 0);  // pier
+    bar(0.8, 0.14, 0.8, m, -side * 0.31, 3.17, 0);   // cap
+    // Leaf swung inwards, towards the club: fully open
+    const leafLen = gateWidth / 2 + 0.35;
+    const hinge = new THREE.Matrix4().multiplyMatrices(m, new THREE.Matrix4().makeRotationY(side * 1.42));
+    const sgn = side;
+    for (const y of [0.32, 2.05]) bar(leafLen, 0.1, 0.07, hinge, sgn * leafLen / 2, y, 0);
+    const bars = Math.round(leafLen / 0.2);
+    for (let k = 0; k <= bars; k++) {
+      const x = sgn * (k / bars) * leafLen;
+      bar(0.045, 2.2 + 0.32 * Math.sin((k / bars) * Math.PI / 2), 0.045, hinge, x, 1.1 + 0.16 * Math.sin((k / bars) * Math.PI / 2), 0);
+    }
+    bar(0.09, 2.6, 0.09, hinge, sgn * leafLen, 1.28, 0);
+    bar(0.09, 2.5, 0.09, hinge, 0, 1.25, 0);
+  }
+  add(mergeGeometries(gateParts), new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.5 }));
+
+  // --- Neighbourhood
+  const houses = phone ? 90 : 190;
+  const bodies = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({ flatShading: true }), houses);
+  const roofGeo = new THREE.ConeGeometry(0.72, 1, 4); roofGeo.rotateY(Math.PI / 4);
+  const roofs = new THREE.InstancedMesh(roofGeo, new THREE.MeshLambertMaterial({ flatShading: true }), houses);
+  const windowMat = new THREE.MeshStandardMaterial({ color: '#2a241c', emissive: '#ffc27a', emissiveIntensity: 1 });
+  const windows = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), windowMat, houses * 2);
+  const walls = ['#d9d5c9', '#cfcabc', '#e0dcd0', '#c7c1b0'];
+  const roofColors = ['#b0694a', '#a55f43', '#bb7552', '#9c5a40'];
+  let placed = 0; let wi = 0; let guard = 0;
+  while (placed < houses && guard++ < 9000) {
+    const far = rnd() > 0.72;
+    const x = far ? lerp(-420, 30, rnd()) : lerp(-150, 34, rnd());
+    const z = far ? lerp(-620, 620, rnd()) : lerp(-230, 270, rnd());
+    if (x > coast(z) - 14) continue;
+    if (x > -62 && z > NORTH - 14 && z < SOUTH + 14) continue;
+    if (x > -38 && z > NORTH - 14 && z < 76) continue;
+    const rd = roadDistance(x, z);
+    if (rd < 9 || (rd > 70 && rnd() > 0.45)) continue;
+    const base = ground(x, z);
+    if (base > 42) continue;
+    const w = 7 + rnd() * 7; const d = 6 + rnd() * 6; const h = 3.1 + rnd() * 3.4;
+    const rot = Math.round(rnd() * 3) * (Math.PI / 2) + (rnd() - 0.5) * 0.5;
+    dummy.position.set(x, base + h / 2 - 0.3, z); dummy.rotation.set(0, rot, 0); dummy.scale.set(w, h + 0.6, d); dummy.updateMatrix();
+    bodies.setMatrixAt(placed, dummy.matrix); bodies.setColorAt(placed, tint.set(walls[Math.floor(rnd() * 4)]));
+    const flatRoof = rnd() > 0.93;
+    dummy.position.y = base + h + (flatRoof ? 0.1 : 0.72); dummy.scale.set(flatRoof ? w * 0.01 : w * 1.05, flatRoof ? 0.01 : 1.5, flatRoof ? d * 0.01 : d * 1.05); dummy.updateMatrix();
+    roofs.setMatrixAt(placed, dummy.matrix); roofs.setColorAt(placed, tint.set(roofColors[Math.floor(rnd() * 4)]));
+    for (const off of [-0.22, 0.22]) {
+      const q = new THREE.Vector3(w * off, 0, d / 2 + 0.02).applyAxisAngle(new THREE.Vector3(0, 1, 0), rot);
+      dummy.position.set(x + q.x, base + h * 0.52, z + q.z); dummy.scale.set(1.1, 1.3, 0.05); dummy.updateMatrix();
+      windows.setMatrixAt(wi++, rnd() > 0.32 ? dummy.matrix : new THREE.Matrix4().makeScale(0, 0, 0));
+    }
+    placed++;
+  }
+  bodies.count = placed; roofs.count = placed; windows.count = wi;
+  group.add(bodies, roofs, windows);
+
+  // --- Trees, kept away from the club
+  const trees = phone ? 110 : 280;
+  const crowns = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), new THREE.MeshLambertMaterial({ flatShading: true }), trees);
+  const shades = ['#2d4228', '#35492b', '#415431', '#2a3d2a'];
+  let t = 0; guard = 0;
+  while (t < trees && guard++ < 9000) {
+    // A good third thick around the property, as the green macchia seen from above
+    const close = rnd() < 0.38;
+    const x = close ? lerp(-10, 50, rnd()) : lerp(-420, 48, rnd()); const z = close ? lerp(-170, 230, rnd()) : lerp(-620, 620, rnd());
+    if (x > coast(z) - 5 || roadDistance(x, z) < 6) continue;
+    if (x > -46 && z > NORTH - 4 && z < SOUTH + 4) continue;
+    const base = ground(x, z); const r = 2 + rnd() * 3;
+    dummy.position.set(x, base + r * 0.9, z); dummy.rotation.set(rnd(), rnd() * 3, 0); dummy.scale.set(r, r * (0.9 + rnd() * 0.4), r); dummy.updateMatrix();
+    crowns.setMatrixAt(t, dummy.matrix); crowns.setColorAt(t, tint.set(shades[Math.floor(rnd() * 4)]));
+    t++;
+  }
+  crowns.count = t;
+  group.add(crowns);
+
+  // A few trees on the terraces, for depth
+  const terraceTrees: [number, number, number, number][] = [[34, -18, T2, 3.2], [35, 12, T2, 2.6], [33, 44, T2, 3.4], [43, -28, T3, 2.4], [42, 2, T3, 3], [44, 30, T3, 2.5], [43, 60, T3, 3.1], [27, 50, T1, 2.2]];
+  const tt = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 1), new THREE.MeshLambertMaterial({ color: '#3a5230', flatShading: true }), terraceTrees.length);
+  const trunkGeo = new THREE.CylinderGeometry(0.1, 0.16, 1, 5);
+  const trunks = new THREE.InstancedMesh(trunkGeo, new THREE.MeshLambertMaterial({ color: '#6f5b45' }), terraceTrees.length);
+  terraceTrees.forEach(([x, z, y, r], i) => {
+    dummy.rotation.set(0, i, 0);
+    dummy.position.set(x, y + r * 1.25, z); dummy.scale.set(r, r * 0.8, r); dummy.updateMatrix(); tt.setMatrixAt(i, dummy.matrix);
+    dummy.position.set(x, y + r * 0.45, z); dummy.scale.set(1, r * 0.9, 1); dummy.updateMatrix(); trunks.setMatrixAt(i, dummy.matrix);
+  });
+  group.add(tt, trunks);
+
+  // --- Boulders at the foot of the cliff
+  const nRocks = phone ? 50 : 130;
+  const rocks = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), new THREE.MeshLambertMaterial({ flatShading: true }), nRocks);
+  for (let i = 0; i < nRocks; i++) {
+    const z = lerp(-420, 420, rnd()); const x = coast(z) + 3 + rnd() * 4; const r = 0.4 + rnd() * rnd() * 1.1;
+    dummy.position.set(x, -10.25 + rnd() * 0.2, z); dummy.rotation.set(rnd() * 3, rnd() * 3, rnd() * 3); dummy.scale.set(r, r * 0.5, r); dummy.updateMatrix();
+    rocks.setMatrixAt(i, dummy.matrix); rocks.setColorAt(i, tint.set(rnd() > 0.5 ? '#4f483d' : '#423c33'));
+  }
+  group.add(rocks);
+
+  // --- Street lamps
+  const lampPoints = ROAD_LINE.getSpacedPoints(phone ? 34 : 60).filter((p) => Math.abs(p.z) < 300);
+  const lampMat = new THREE.MeshStandardMaterial({ color: '#ffe2b0', emissive: '#ffbd70', emissiveIntensity: 1 });
+  const lamps = new THREE.InstancedMesh(new THREE.SphereGeometry(0.2, 6, 5), lampMat, lampPoints.length);
+  const poles = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.05, 0.07, 1, 5), new THREE.MeshLambertMaterial({ color: '#2c2c2e' }), lampPoints.length);
+  lampPoints.forEach((p, i) => {
+    const y = roadHeight(p.x, p.z);
+    dummy.rotation.set(0, 0, 0);
+    dummy.position.set(p.x - 3.6, y + 4.4, p.z); dummy.scale.set(1, 1, 1); dummy.updateMatrix(); lamps.setMatrixAt(i, dummy.matrix);
+    dummy.position.set(p.x - 3.6, y + 2.2, p.z); dummy.scale.set(1, 4.4, 1); dummy.updateMatrix(); poles.setMatrixAt(i, dummy.matrix);
+  });
+  group.add(lamps, poles);
+
+  // --- Palms of the club: tapered trunk and fronds with real width
+  const palmParts: THREE.BufferGeometry[] = [];
+  const palmLeaves: THREE.BufferGeometry[] = [];
+  for (const [x, z, y, h] of [[-16.69, -1.42, 0.8, 6.3], [2.14, 29.29, 0, 4.8]]) {
+    const tr = new THREE.CylinderGeometry(0.11, 0.2, h, 7); tr.translate(x, y + h / 2, z); palmParts.push(tr);
+    const fronds = phone ? 10 : 15;
+    for (let f = 0; f < fronds; f++) {
+      const a = f * 2.399; const len = 2.5 + (f % 3) * 0.35; const tilt = 0.35 + (f % 4) * 0.2;
+      const verts: number[] = []; const seg = 6;
+      for (let k = 0; k < seg; k++) {
+        const point = (t: number, side: number) => {
+          const w = 0.34 * Math.sin(Math.PI * Math.min(1, t * 1.05 + 0.04)) * side;
+          const d = len * t; const lift = tilt * d - 0.42 * d * d;
+          return [x + Math.cos(a) * d - Math.sin(a) * w, y + h + lift - Math.abs(w) * 0.25, z + Math.sin(a) * d + Math.cos(a) * w];
+        };
+        const [t0, t1] = [k / seg, (k + 1) / seg];
+        verts.push(...point(t0, -1), ...point(t0, 1), ...point(t1, 1), ...point(t0, -1), ...point(t1, 1), ...point(t1, -1));
+      }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3)); g.computeVertexNormals(); palmLeaves.push(g);
+    }
+  }
+  add(mergeGeometries(palmParts), new THREE.MeshLambertMaterial({ color: '#7b6650' }));
+  add(mergeGeometries(palmLeaves), new THREE.MeshLambertMaterial({ color: '#4f6d38', side: THREE.DoubleSide, flatShading: true }));
+
+  // --- Night lights on the outer seats: a lit lantern on each table, low garden lamps along the row
+  const glowMat = new THREE.MeshStandardMaterial({ color: '#ffe0ad', emissive: '#ffb765', emissiveIntensity: 1 });
+  const outer = tables.filter((t) => t.zone === 'prato-back' || /^SV(6|7|8|9|10|11)$/.test(t.id));
+  const glow = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 8, 6), glowMat, outer.length * 2);
+  const stems = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.03, 0.04, 1, 5), new THREE.MeshLambertMaterial({ color: '#2c2c2e' }), outer.length);
+  outer.forEach((t, i) => {
+    const [x, y, z] = t.p;
+    dummy.rotation.set(0, 0, 0);
+    dummy.position.set(x, y + 0.12, z); dummy.scale.setScalar(0.07); dummy.updateMatrix(); glow.setMatrixAt(i * 2, dummy.matrix);
+    const ground = y - 0.75;
+    dummy.position.set(x + 1.15, ground + 1.05, z + 0.6); dummy.scale.setScalar(0.09); dummy.updateMatrix(); glow.setMatrixAt(i * 2 + 1, dummy.matrix);
+    dummy.position.set(x + 1.15, ground + 0.5, z + 0.6); dummy.scale.set(1, 1, 1); dummy.updateMatrix(); stems.setMatrixAt(i, dummy.matrix);
+  });
+  group.add(glow, stems);
+
+  // --- Table lamp on the main bar, on the corner towards the console
+  const LAMP: P2 = [-6.55, 13.15];
+  const barTop = topAt(LAMP[0], LAMP[1]);
+  const lampParts: THREE.BufferGeometry[] = [];
+  const foot = new THREE.CylinderGeometry(0.09, 0.11, 0.04, 12); foot.translate(LAMP[0], barTop + 0.02, LAMP[1]); lampParts.push(foot);
+  const stem = new THREE.CylinderGeometry(0.014, 0.014, 0.42, 6); stem.translate(LAMP[0], barTop + 0.25, LAMP[1]); lampParts.push(stem);
+  add(mergeGeometries(lampParts), new THREE.MeshStandardMaterial({ color: '#2a2622', roughness: 0.4 }));
+  const shadeGeo = new THREE.CylinderGeometry(0.11, 0.21, 0.26, 16, 1, true); shadeGeo.translate(LAMP[0], barTop + 0.56, LAMP[1]);
+  const shadeMat = new THREE.MeshStandardMaterial({ color: '#fff0d6', emissive: '#ffb765', emissiveIntensity: 1, side: THREE.DoubleSide });
+  add(shadeGeo, shadeMat);
+
+  // Real light only where it shows: the row and the bar lamp. Phones keep the glow without the extra lights.
+  const pools: THREE.PointLight[] = [];
+  if (!phone) {
+    const row = tables.filter((t) => t.zone === 'prato-back');
+    const mid = row[Math.floor(row.length / 2)]?.p ?? [12, 1, -15];
+    for (const [x, y, z, power] of [[mid[0] + 1, mid[1] + 1.4, mid[2] - 5, 16], [mid[0] + 1, mid[1] + 1.4, mid[2] + 5, 16], [LAMP[0], barTop + 0.5, LAMP[1], 5]]) {
+      const l = new THREE.PointLight('#ffb36b', power, 12, 1.8); l.position.set(x, y, z); l.userData.power = power; pools.push(l); group.add(l);
+    }
+  }
+
+  return {
+    group,
+    setMood(mood: Mood) {
+      windowMat.emissiveIntensity = mood === 'night' ? 1.1 : 0.12;
+      lampMat.emissiveIntensity = mood === 'night' ? 2.4 : 0.3;
+      glowMat.emissiveIntensity = mood === 'night' ? 3 : 0.35;
+      shadeMat.emissiveIntensity = mood === 'night' ? 1.6 : 0.3;
+      pools.forEach((l) => { l.intensity = mood === 'night' ? l.userData.power : 0; });
+    },
+  };
+}
