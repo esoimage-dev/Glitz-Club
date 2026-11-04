@@ -2,9 +2,8 @@
 import { useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { AnimatePresence, motion } from 'motion/react';
-import { ADDRESS } from '@/lib/data';
+import { ADDRESS, MAPS_URL } from '@/lib/data';
 
-const PLACE = encodeURIComponent('Glitz Club, San Nicola Arcella');
 // The map library only downloads the first time this opens, so it costs the page nothing until then.
 const WhereMap = dynamic(() => import('./WhereMap'), { ssr: false });
 
@@ -30,7 +29,7 @@ export default function WhereModal({ open, onClose }: { open: boolean; onClose: 
               <WhereMap />
             </div>
             <p>{ADDRESS}<br /><span className="dim">Davanti all’Isola di Dino</span></p>
-            <a className="btn" href={`https://www.google.com/maps/dir/?api=1&destination=${PLACE}`} target="_blank" rel="noreferrer">Apri le indicazioni</a>
+            <a className="btn" href={MAPS_URL} target="_blank" rel="noreferrer">Apri le indicazioni</a>
           </motion.div>
         </motion.div>
       )}

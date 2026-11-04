@@ -11,6 +11,7 @@ export const WHATSAPP_LABEL = '+39 344 428 9232';
 export const EMAIL = 'glitzclubofficial@gmail.com';
 export const INSTAGRAM = 'https://instagram.com/glitzclubofficial';
 export const TIKTOK = 'https://tiktok.com/@glitzclubofficial';
+export const MAPS_URL = 'https://www.google.com/maps/search/?api=1&query=Contrada+Dino+San+Nicola+Arcella';
 export const ADDRESS = 'Contrada Dino, 87020 San Nicola Arcella (CS)';
 
 // Summer 2026 as it actually went: dates from the TicketSms archive and the Instagram posters.

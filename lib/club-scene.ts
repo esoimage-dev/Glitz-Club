@@ -30,6 +30,18 @@ const LED = [new THREE.Color('#5a5cf7'), new THREE.Color('#d41fd0'), new THREE.C
 const ledAt = (t: number) => (t < 0.55 ? LED[0].clone().lerp(LED[1], t / 0.55) : LED[1].clone().lerp(LED[2], (t - 0.55) / 0.45));
 
 const isPhone = () => innerWidth < 860;
+const scrollPause = () => new Promise<void>((resolve) => {
+  let lastY = scrollY; const started = performance.now();
+  const check = setInterval(() => {
+    if (scrollY === lastY || performance.now() - started > 6000) { clearInterval(check); resolve(); }
+    lastY = scrollY;
+  }, 180);
+});
+// Waits for a spare moment in the browser's own schedule; Safari may not have the API, so it falls back to a short pause.
+const breathe = () => new Promise<void>((resolve) => {
+  if ('requestIdleCallback' in window) requestIdleCallback(() => resolve(), { timeout: 250 });
+  else setTimeout(resolve, 40);
+});
 const MIN_DPR = () => (isPhone() ? 1.5 : 1);
 
 // Colours bottom to top, plus the glow around where the sun went down, out to sea behind the island.
@@ -168,24 +180,34 @@ export class ClubScene {
   private pathGoal = 0;
   private pathNow: number | null = null;
   private lastLoop = 0;
+  private loading = false;
   private sky = buildSky();
-  private surroundings: ReturnType<typeof buildSurroundings> | null = null;
+  private surroundings: Awaited<ReturnType<typeof buildSurroundings>> | null = null;
   private panInput = { x: 0, z: 0 };
   private interactive = false;
 
+  /**
+   * Prepares the club in small slices of spare time, so it can start as soon as the page opens
+   * without touching the scrolling: download and decoding happen off the main thread, the rest runs
+   * piece by piece in idle moments. Nothing is drawn until everything is ready.
+   */
   async load(url = `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/models/${isPhone() ? 'glitz-mobile' : 'glitz'}.glb`) {
+    this.loading = true;
     const loader = new GLTFLoader();
     MeshoptDecoder.useWorkers?.(2);
     loader.setMeshoptDecoder(MeshoptDecoder);
     const gltf = await loader.loadAsync(url);
-    // Each heavy step gets its own frame, so scrolling never stalls while the club is being prepared.
-    const breathe = () => new Promise((r) => setTimeout(r, 30));
     await breathe();
     this.scene.add(gltf.scene);
     gltf.scene.updateMatrixWorld(true);
+    // Leaves are most of the triangles and never what a lamp stands on: skip them when finding the bar's top
+    const solid: THREE.Object3D[] = [];
+    gltf.scene.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh && (m.geometry.attributes.position?.count ?? 0) < 30000) solid.push(m); });
     const down = new THREE.Raycaster(); const dir = new THREE.Vector3(0, -1, 0);
-    const topAt = (x: number, z: number) => { down.set(new THREE.Vector3(x, 8, z), dir); return down.intersectObject(gltf.scene, true)[0]?.point.y ?? 1; };
-    this.surroundings = buildSurroundings(isPhone(), TABLES, topAt);
+    const topAt = (x: number, z: number) => { down.set(new THREE.Vector3(x, 8, z), dir); return down.intersectObjects(solid, true)[0]?.point.y ?? 1; };
+    this.surroundings = await buildSurroundings(isPhone(), TABLES, topAt, breathe);
+    this.surroundings.setMood(this.mood);
+    this.scene.add(this.surroundings.group);
     await breathe();
     this.seaMats.add(this.surroundings.seaMaterial);
     this.surroundings.setMood(this.mood);
@@ -229,11 +251,47 @@ export class ClubScene {
     // Nothing but the camera and the sky moves: skip walking a thousand matrices every frame
     this.scene.updateMatrixWorld(true);
     this.scene.matrixWorldAutoUpdate = false;
-    // Shaders and geometry go to the GPU now, off screen, not on the frame the section scrolls into view.
-    await this.renderer.compileAsync(this.scene, this.camera);
     await breathe();
+    await this.upload();
+    // The very first full frame is the one heavy moment left: it waits for a pause in the scrolling
+    await scrollPause();
+    this.loading = false;
     this.draw();
+    await breathe();
     this.ready = true;
+  }
+
+  /** Sends the model to the GPU a few pieces per idle slot, instead of all of it on the first frame people see. */
+  private async upload() {
+    const target = this.composer ? this.composer.renderTarget1 : null;
+    this.renderer.setRenderTarget(target);
+    await this.renderer.compileAsync(this.scene, this.camera);
+    this.renderer.setRenderTarget(null);
+    await breathe();
+    const pieces: THREE.Object3D[] = [];
+    this.scene.traverse((o) => {
+      if ((o as THREE.Light).isLight) o.layers.enable(1);
+      if ((o as THREE.Mesh).isMesh) pieces.push(o);
+    });
+    const WORK = isPhone() ? 25000 : 60000; // vertices per slot
+    this.camera.layers.set(1);
+    let batch: THREE.Object3D[] = []; let work = 0;
+    const flush = async () => {
+      batch.forEach((o) => o.layers.enable(1));
+      this.renderer.setRenderTarget(target);
+      this.renderer.render(this.scene, this.camera);
+      this.renderer.setRenderTarget(null);
+      batch.forEach((o) => o.layers.disable(1));
+      batch = []; work = 0;
+      await breathe();
+    };
+    for (const o of pieces) {
+      batch.push(o);
+      work += (o as THREE.Mesh).geometry.attributes.position?.count ?? 0;
+      if (work >= WORK) await flush();
+    }
+    if (batch.length) await flush();
+    this.camera.layers.set(0);
   }
 
   setMood(mood: Mood) {
@@ -378,7 +436,7 @@ export class ClubScene {
     this.camera.fov = r.width / r.height < 0.9 ? 46 : 30;
     this.camera.updateProjectionMatrix();
     // Resizing clears the canvas: draw in the same frame or it flashes black.
-    this.draw();
+    if (!this.loading) this.draw(); else this.needs = true;
   }
 
   private draw() {
@@ -425,7 +483,7 @@ export class ClubScene {
       this.controls.update();
       if (!this.fly) this.clampTarget();
     } else if (this.fly) this.camera.lookAt(this.controls.target);
-    if (!this.needs) return;
+    if (!this.needs || this.loading) return;
     this.adapt(now);
     this.draw();
   }

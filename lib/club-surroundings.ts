@@ -83,7 +83,7 @@ function ground(x: number, z: number) {
 const roadHeight = (x: number, z: number) => Math.max(ROAD_Y, terrain(x, z));
 
 /** Non-uniform grid: fine around the club, coarse to the horizon. */
-function buildGround(step: number) {
+async function buildGround(step: number, breathe: () => Promise<unknown>) {
   const axis = (from: number, to: number, a: number, b: number) => {
     const out: number[] = [];
     for (let v = from; v < a; v += 48) out.push(v);
@@ -102,7 +102,13 @@ function buildGround(step: number) {
     if (r > 0) c.lerp(rock, r).lerp(rockB, smooth(-5, -11, cy) * 0.5 + 0.2 * Math.abs(noise(cx * 3, cz * 3)));
     for (let k = 0; k < 3; k++) col.push(c.r, c.g, c.b);
   };
-  const heights = xs.map((x) => zs.map((z) => ground(x, z)));
+  // A few rows at a time, so this never holds up the page
+  const heights: number[][] = [];
+  for (let i = 0; i < xs.length; i++) {
+    heights.push(zs.map((z) => ground(xs[i], z)));
+    if (i % 8 === 7) await breathe();
+  }
+  await breathe();
   for (let i = 0; i < xs.length - 1; i++) for (let j = 0; j < zs.length - 1; j++) {
     const corners = [[i, j], [i, j + 1], [i + 1, j], [i + 1, j], [i, j + 1], [i + 1, j + 1]];
     for (let t = 0; t < 6; t += 3) {
@@ -132,7 +138,7 @@ const edgeLine = (base: number, n = 12): P2[] => Array.from({ length: n + 1 }, (
 
 type Span = { a: P2; b: P2; y0: number; y1: number; w: number };
 
-export function buildSurroundings(phone: boolean, tables: { id: string; zone: string; p: [number, number, number] }[], topAt: (x: number, z: number) => number) {
+export async function buildSurroundings(phone: boolean, tables: { id: string; zone: string; p: [number, number, number] }[], topAt: (x: number, z: number) => number, breathe: () => Promise<unknown>) {
   const group = new THREE.Group();
   group.name = 'Contesto';
   let seed = 41;
@@ -140,7 +146,8 @@ export function buildSurroundings(phone: boolean, tables: { id: string; zone: st
   const flat = (color: string) => new THREE.MeshLambertMaterial({ color, flatShading: true });
   const add = (geo: THREE.BufferGeometry, mat: THREE.Material | THREE.Material[]) => { const m = new THREE.Mesh(geo, mat); group.add(m); return m; };
 
-  add(buildGround(phone ? 3.5 : 2), new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }));
+  add(await buildGround(phone ? 3.5 : 2, breathe), new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }));
+  await breathe();
 
   // --- Terraces. Stone sides, lawn getting lighter towards the sea
   const stone = flat('#cfc9b8');
@@ -150,6 +157,7 @@ export function buildSurroundings(phone: boolean, tables: { id: string; zone: st
   add(plate([...reversed(edgeLine(EDGE_2)), ...edgeLine(EDGE_1)], T2, 4), lawn('#587243'));
   add(plate([...reversed(edgeLine(EDGE_3, 12)), ...edgeLine(EDGE_2)], T3, 7), lawn('#74894f'));
 
+  await breathe();
   // --- Hedges. Box core plus clumps on top so it reads as a plant, not a wall
   const spans: Span[] = [];
   const line = (pts: P2[], y0: number, y1: number, w: number) => { for (let i = 1; i < pts.length; i++) spans.push({ a: pts[i - 1], b: pts[i], y0, y1, w }); };
@@ -203,6 +211,7 @@ export function buildSurroundings(phone: boolean, tables: { id: string; zone: st
   });
   group.add(box, clumps);
 
+  await breathe();
   // --- Isola di Dino: smooth, rock low down and green on top, out to the right when facing the sea
   const island = (() => {
     const RINGS = 22; const SEG = 72;
@@ -246,6 +255,7 @@ export function buildSurroundings(phone: boolean, tables: { id: string; zone: st
   const seaFar = new THREE.CircleGeometry(2500, 48); seaFar.rotateX(-Math.PI / 2); seaFar.translate(0, -10.32, 0);
   add(seaFar, seaMaterial);
 
+  await breathe();
   // --- Wood deck around every white block, stone path to the bathroom's front door
   const DECK_Y = 0.83;
   const blocks: [number, number, number, number][] = [[-26.14, -21.94, 15.67, 22.17], [8.45, 10.15, 22.45, 24.35], [-29.4, -27.6, 33.4, 40.8]];
@@ -313,6 +323,7 @@ export function buildSurroundings(phone: boolean, tables: { id: string; zone: st
   });
   group.add(pots, shrubs, flowers);
 
+  await breathe();
   // --- Road
   const roadPos: number[] = [];
   const HALF = 3;
@@ -332,6 +343,7 @@ export function buildSurroundings(phone: boolean, tables: { id: string; zone: st
   road.computeVertexNormals();
   const roadMat = new THREE.MeshLambertMaterial({ color: '#4c4d50', side: THREE.DoubleSide });
   add(road, roadMat);
+  await breathe();
   // --- The gate: white, big and standing open, right where grey becomes white
   const gateParts: THREE.BufferGeometry[] = [];
   const bar = (w: number, h: number, d: number, m: THREE.Matrix4, x: number, y: number, z: number) => {
@@ -360,6 +372,7 @@ export function buildSurroundings(phone: boolean, tables: { id: string; zone: st
   }
   add(mergeGeometries(gateParts), new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.5 }));
 
+  await breathe();
   // --- Neighbourhood
   const houses = phone ? 90 : 190;
   const bodies = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({ flatShading: true }), houses);
@@ -398,6 +411,7 @@ export function buildSurroundings(phone: boolean, tables: { id: string; zone: st
   bodies.count = placed; roofs.count = placed; windows.count = wi;
   group.add(bodies, roofs, windows);
 
+  await breathe();
   // --- Trees, kept away from the club
   const trees = phone ? 110 : 280;
   const crowns = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), new THREE.MeshLambertMaterial({ flatShading: true }), trees);
@@ -429,6 +443,7 @@ export function buildSurroundings(phone: boolean, tables: { id: string; zone: st
   });
   group.add(tt, trunks);
 
+  await breathe();
   // --- Boulders at the foot of the cliff
   const nRocks = phone ? 30 : 70;
   const rocks = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), new THREE.MeshLambertMaterial({ flatShading: true }), nRocks);
@@ -452,6 +467,7 @@ export function buildSurroundings(phone: boolean, tables: { id: string; zone: st
   });
   group.add(lamps, poles);
 
+  await breathe();
   // --- Night lights on the outer seats: a lit lantern on each table, low garden lamps along the row
   const glowMat = new THREE.MeshStandardMaterial({ color: '#ffe0ad', emissive: '#ffb765', emissiveIntensity: 1 });
   const outer = tables.filter((t) => t.zone === 'prato-back' || /^SV(6|7|8|9|10|11)$/.test(t.id));

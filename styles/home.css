@@ -147,6 +147,8 @@
   .zs-dots::-webkit-scrollbar { display: none; }
   .zs-bottom .btn { width: 100%; }
   .mt-a { grid-column: 1 / 8; } .mt-b { grid-column: 8 / 13; margin-top: 8vh; } .mt-c { grid-column: 1 / 6; margin-top: 0; } .mt-d { grid-column: 6 / 13; margin-top: 0; }
-  .priv { grid-template-columns: 1fr; }
+  .priv { grid-template-columns: 1fr; justify-items: center; text-align: center; }
   .priv-photo { width: 78%; }
+  .priv-txt { justify-items: center; }
+  .priv-txt .lede { margin-inline: auto; }
 }
