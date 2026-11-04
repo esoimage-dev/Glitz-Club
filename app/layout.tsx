@@ -30,7 +30,15 @@ const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
 export const metadata: Metadata = {
   title: { default: 'Glitz Club, San Nicola Arcella', template: '%s, Glitz Club' },
   description: "Il club all'aperto davanti all'Isola di Dino. Serate d'estate, tavoli vista mare e l'arco che si accende al tramonto.",
-  icons: { icon: `${BASE}/brand/favicon.svg` },
+  metadataBase: new URL('https://esoimage-dev.github.io'),
+  icons: { icon: `${BASE}/brand/favicon.svg`, apple: `${BASE}/brand/apple-touch-icon.png` },
+  openGraph: {
+    type: 'website', locale: 'it_IT', siteName: 'Glitz Club', url: `${BASE}/`,
+    title: 'Glitz Club, San Nicola Arcella',
+    description: "Il soffitto è il cielo. Il fondale è il mare. Il club all'aperto davanti all'Isola di Dino.",
+    images: [{ url: `${BASE}/brand/og.jpg`, width: 1200, height: 630, alt: "Glitz Club, davanti all'Isola di Dino" }],
+  },
+  twitter: { card: 'summary_large_image', images: [`${BASE}/brand/og.jpg`] },
   // The Pages link is a preview: the calendar is unconfirmed, so search engines stay out.
   ...(BASE ? { robots: { index: false, follow: false } } : {}),
 };
