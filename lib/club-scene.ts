@@ -17,7 +17,7 @@ export const TABLES = tablesData as TableInfo[];
 
 export const SHOTS: Record<'overview' | 'arch' | 'sea' | ZoneId, Shot> = {
   overview: { pos: [-46, 40, 44], target: [2, 0, -2] },
-  sea: { pos: [-30, 17, 25], target: [40, 0, -30] },
+  sea: { pos: [-30, 17, 25], target: [60, 0, 2] },
   arch: { pos: [-14, 7, 13], target: [-6, 3, -13] },
   back: { pos: [-14, 8.5, 11], target: [-3, 2, -11] },
   riva: { pos: [-13, 13, 21], target: [4, 1.5, 6] },
@@ -116,7 +116,7 @@ export class ClubScene {
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.camera = new THREE.PerspectiveCamera(30, 1, 2.5, 2600);
     this.controls = new OrbitControls(this.camera, canvas);
-    Object.assign(this.controls, { enableDamping: true, dampingFactor: 0.08, minDistance: 14, maxDistance: 105, maxPolarAngle: 1.42, enabled: !!opts.interactive, zoomToCursor: true });
+    Object.assign(this.controls, { enableDamping: true, dampingFactor: 0.08, minDistance: 14, maxDistance: 80, maxPolarAngle: 1.42, enabled: !!opts.interactive, zoomToCursor: true });
     this.controls.addEventListener('change', () => { this.needs = true; });
     this.interactive = !!opts.interactive;
     // OrbitControls sets touch-action:none on connect, even disabled: that alone kills page scroll on phones.
@@ -141,7 +141,7 @@ export class ClubScene {
     if (!low) {
       this.renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
       // Bloom bypasses canvas antialiasing, so the render target does its own.
-      this.composer = new EffectComposer(this.renderer, new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 }));
+      this.composer = new EffectComposer(this.renderer, new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 2 }));
       this.composer.addPass(new RenderPass(this.scene, this.camera));
       this.composer.addPass(new UnrealBloomPass(new THREE.Vector2(512, 512), 0.42, 0.55, 0.96));
       this.composer.addPass(new OutputPass());
@@ -177,11 +177,16 @@ export class ClubScene {
     MeshoptDecoder.useWorkers?.(2);
     loader.setMeshoptDecoder(MeshoptDecoder);
     const gltf = await loader.loadAsync(url);
+    // Each heavy step gets its own frame, so scrolling never stalls while the club is being prepared.
+    const breathe = () => new Promise((r) => setTimeout(r, 30));
+    await breathe();
     this.scene.add(gltf.scene);
     gltf.scene.updateMatrixWorld(true);
     const down = new THREE.Raycaster(); const dir = new THREE.Vector3(0, -1, 0);
     const topAt = (x: number, z: number) => { down.set(new THREE.Vector3(x, 8, z), dir); return down.intersectObject(gltf.scene, true)[0]?.point.y ?? 1; };
     this.surroundings = buildSurroundings(isPhone(), TABLES, topAt);
+    await breathe();
+    this.seaMats.add(this.surroundings.seaMaterial);
     this.surroundings.setMood(this.mood);
     this.scene.add(this.surroundings.group);
 
@@ -222,6 +227,7 @@ export class ClubScene {
     this.applyTableStates();
     // Shaders and geometry go to the GPU now, off screen, not on the frame the section scrolls into view.
     await this.renderer.compileAsync(this.scene, this.camera);
+    await breathe();
     this.draw();
     this.ready = true;
   }
@@ -319,9 +325,9 @@ export class ClubScene {
   /** Panning stays around the club: the target can't leave this box, however you drag or zoom. */
   private clampTarget() {
     const t = this.controls.target;
-    const x = THREE.MathUtils.clamp(t.x, -30, 32);
-    const y = THREE.MathUtils.clamp(t.y, -2, 6);
-    const z = THREE.MathUtils.clamp(t.z, -32, 44);
+    const x = THREE.MathUtils.clamp(t.x, -20, 15);
+    const y = THREE.MathUtils.clamp(t.y, 0, 5);
+    const z = THREE.MathUtils.clamp(t.z, -22, 34);
     if (x !== t.x || y !== t.y || z !== t.z) {
       this.camera.position.x += x - t.x; this.camera.position.y += y - t.y; this.camera.position.z += z - t.z;
       t.set(x, y, z);
@@ -386,8 +392,8 @@ export class ClubScene {
     const avg = this.frames.reduce((a, b) => a + b, 0) / this.frames.length;
     this.frames = [];
     const dpr = this.renderer.getPixelRatio();
-    if (avg > 38 && dpr > 1.25) {
-      this.renderer.setPixelRatio(Math.max(1.25, dpr - 0.25));
+    if (avg > 26 && dpr > 1) {
+      this.renderer.setPixelRatio(Math.max(1, dpr - 0.25));
       this.composer?.setPixelRatio(this.renderer.getPixelRatio());
     }
   }

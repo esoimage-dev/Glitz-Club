@@ -17,7 +17,7 @@
 ## Come è fatto il 3D
 - `lib/club-surroundings.ts`: tutto il contesto, in codice (terrazzamenti, scogliera, siepi, cancello, strada, case, palme, luci esterne, abat-jour). Si modifica e basta.
 - `lib/club-scene.ts`: luci, cielo, camere, panning e relativi limiti.
-- `scripts/model-source/glitz-base.html`: il modello originale con le nostre correzioni (scale, bar, alberi). Se cambia va riesportato con `GlitzMap.exportGLB()`, compresso con `gltf-transform optimize` (meshopt, simplify-error 0.008, join e flatten disattivati), copiato in `public/models/glitz.glb`; poi `node scripts/mobile-model.mjs`.
+- `scripts/model-source/glitz-base.html`: il modello originale con le nostre correzioni (scale, bar, base della casa, scale verso il palco). Se cambia va riesportato con `GlitzMap.exportGLB()`, compresso con `gltf-transform optimize` (meshopt, `--simplify false`, join e flatten disattivati), salvato come `scripts/model-source/glitz-full.glb`; poi `node scripts/build-models.mjs`. Mai usare la semplificazione: cancella tronchi, scale e tegole.
 - Il contesto è stilizzato e non segue la mappa reale, per scelta.
 
 ## Prossimi passi

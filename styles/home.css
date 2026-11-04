@@ -1,7 +1,7 @@
 /* Hero */
 .hero { height: 340vh; height: 340svh; position: relative; }
 .hero-stick { position: sticky; top: 0; height: 100vh; height: 100lvh; overflow: hidden; }
-.hero-win { position: absolute; inset: 0; color: var(--white); will-change: clip-path; }
+.hero-win { position: absolute; inset: 0; color: var(--white); }
 .hero-photo { position: absolute; inset: 0; }
 .hero-photo img { object-fit: cover; }
 .hero-shade { position: absolute; inset: 0; background: #000; }

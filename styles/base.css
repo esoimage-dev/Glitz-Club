@@ -132,7 +132,10 @@ ul, ol { list-style: none; }
 .hd-dark:has(.hd-nav a:nth-child(4):hover) + .hd-light .hd-nav a:nth-child(4)::after { transform: scaleX(1); transform-origin: left; }
 .hd-dark:has(.hd-logo:hover) + .hd-light .sw { opacity: 1; }
 .hd-dark:has(.hd-burger:hover) + .hd-light .hd-burger { transform: rotate(90deg); }
-.hd-logo { display: block; width: 92px; color: inherit; }
+.hd-logo { display: block; width: 104px; color: inherit; }
+/* Optical size: at this width the logo's hairlines fall under one pixel and shimmer. A touch of stroke steadies them; the geometry stays the registered one. */
+.hd-logo .logo-live > path { stroke: currentColor; stroke-width: 0.4px; vector-effect: non-scaling-stroke; paint-order: stroke; }
+.hd-logo .logo-live > .sw { stroke: none; }
 .hd-right { display: flex; justify-content: flex-end; align-items: center; gap: 12px; }
 .hd .btn { min-height: 42px; padding: 0 20px; }
 .hd-cta { background: var(--black); color: var(--white); }
@@ -215,7 +218,7 @@ a:hover > .logo-live .sw, .logo-live:hover .sw { opacity: 1; }
 @media (max-width: 860px) {
   .hd { grid-template-columns: auto 1fr; }
   .hd-nav { display: none; }
-  .hd-logo { width: 78px; }
+  .hd-logo { width: 88px; }
   .hd .hd-cta { display: none; }
   .hd-halo { height: 84px; }
   .mn { grid-template-columns: 1fr; grid-template-rows: 1fr auto; padding-top: 88px; }

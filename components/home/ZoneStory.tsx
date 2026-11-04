@@ -61,8 +61,13 @@ export default function ZoneStory() {
     // On desktop it loads right after the intro, long before it is needed. On phones only when getting close, to spare data.
     const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { io.disconnect(); start(); } }, { rootMargin: '250% 0px' });
     io.observe(el);
-    const timer = innerWidth >= 860 ? setTimeout(start, 4300) : undefined;
-    return () => { disposed = true; clearTimeout(timer); io.disconnect(); scene.current?.dispose(); scene.current = null; };
+    // Waits for a pause in the scrolling, so preparing the club never lands in the middle of a gesture.
+    let lastY = -1;
+    const timer = innerWidth >= 860 ? setInterval(() => {
+      if (performance.now() > 4300 && scrollY === lastY) { clearInterval(timer); start(); }
+      lastY = scrollY;
+    }, 350) : undefined;
+    return () => { disposed = true; clearInterval(timer); io.disconnect(); scene.current?.dispose(); scene.current = null; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

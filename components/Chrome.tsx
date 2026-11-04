@@ -57,7 +57,7 @@ export default function Chrome() {
 
   useEffect(() => {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches || fullscreen) return;
-    const l = new Lenis({ lerp: 0.11 });
+    const l = new Lenis({ lerp: 0.14, wheelMultiplier: 0.9 });
     lenis.current = l;
     (window as unknown as { __lenis?: Lenis }).__lenis = l;
     let raf = requestAnimationFrame(function loop(t) { l.raf(t); raf = requestAnimationFrame(loop); });
@@ -70,7 +70,7 @@ export default function Chrome() {
 
   // Runs on every scroll frame: paints the white header over dark areas and moves the clock.
   useEffect(() => {
-    let raf = 0;
+    let raf = 0; let lastClip = '';
     const read = () => {
       raf = 0;
       const dark = [...document.querySelectorAll<HTMLElement>(DARK)].map((el) => el.getBoundingClientRect());
@@ -82,7 +82,8 @@ export default function Chrome() {
           const top = Math.max(0, r.top); const bottom = Math.min(HEADER_BAND, r.bottom);
           if (bottom > top && r.right > 0 && r.left < innerWidth) d += `M${r.left} ${top}H${r.right}V${bottom}H${r.left}Z`;
         }
-        lightBar.current.style.clipPath = `path('${d || 'M0 0Z'}')`;
+        const clip = d || 'M0 0Z';
+        if (clip !== lastClip) { lightBar.current.style.clipPath = `path('${clip}')`; lastClip = clip; }
       }
 
       const c = clock.current;

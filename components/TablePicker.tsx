@@ -148,7 +148,7 @@ export default function TablePicker() {
             </button>
           ))}
         </div>
-        <p className="tp-help small">Trascina per ruotare. Frecce per spostarti, oppure barra spaziatrice e trascina. Rotella o pizzico per lo zoom.</p>
+        <p className="tp-help small">Trascina per ruotare, frecce per muoverti, rotella per lo zoom</p>
         <div className="tp-pad" role="group" aria-label="Sposta la mappa">
           {([['up', 0, 1, 'Avanti'], ['left', -1, 0, 'A sinistra'], ['right', 1, 0, 'A destra'], ['down', 0, -1, 'Indietro']] as const).map(([k, x, z, label]) => (
             <button key={k} type="button" className={`tp-pad-${k}`} aria-label={label}

@@ -32,7 +32,7 @@ const ROAD_POINTS = ROAD_LINE.getPoints(170);
 const smooth = (a: number, b: number, x: number) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const noise = (x: number, z: number) => Math.sin(x * 0.13 + 1.3) * Math.cos(z * 0.11 - 0.7) + 0.5 * Math.sin(x * 0.31 + z * 0.23) + 0.25 * Math.sin(x * 0.71 - z * 0.67);
-const coast = (z: number) => 54 + 3.4 * Math.sin(z / 37) + 1.6 * Math.sin(z / 11) + ((z / 620) ** 2) * 90;
+const coast = (z: number) => 54 + 3.4 * Math.sin(z / 37) + 1.6 * Math.sin(z / 11);
 
 function inside(p: P2[], x: number, z: number) {
   let c = false;
@@ -67,7 +67,7 @@ function ground(x: number, z: number) {
   if (x > 15 && x < EDGE_3 + 0.5 && z > NORTH && z < SOUTH) return -6; // under the terraces
   if (inside(PROPERTY, x, z)) return -0.1;
   const y = terrain(x, z);
-  const d = roadDistance(x, z);
+  const d = x > -8 ? Infinity : roadDistance(x, z);
   if (d < 22) {
     // The road cuts a level bench: nearest centre height, blending back into the hillside
     let best = ROAD_POINTS[0]; let bd = Infinity;
@@ -91,7 +91,6 @@ function buildGround(step: number) {
   const zs = axis(-900, 900, -70, 110);
   const pos: number[] = []; const col: number[] = []; const c = new THREE.Color();
   const grass = new THREE.Color('#3f5233'); const grassB = new THREE.Color('#566642'); const rock = new THREE.Color('#857a68'); const rockB = new THREE.Color('#5f574a');
-  const vert = (x: number, z: number) => { pos.push(x, ground(x, z), z); };
   const paint = (cx: number, cy: number, cz: number) => {
     const edge = coast(cz);
     const r = smooth(edge - 4, edge, cx);
@@ -99,12 +98,13 @@ function buildGround(step: number) {
     if (r > 0) c.lerp(rock, r).lerp(rockB, smooth(-5, -11, cy) * 0.5 + 0.2 * Math.abs(noise(cx * 3, cz * 3)));
     for (let k = 0; k < 3; k++) col.push(c.r, c.g, c.b);
   };
+  const heights = xs.map((x) => zs.map((z) => ground(x, z)));
   for (let i = 0; i < xs.length - 1; i++) for (let j = 0; j < zs.length - 1; j++) {
-    const [x0, x1, z0, z1] = [xs[i], xs[i + 1], zs[j], zs[j + 1]];
-    for (const [a, b, d] of [[[x0, z0], [x0, z1], [x1, z0]], [[x1, z0], [x0, z1], [x1, z1]]] as P2[][]) {
-      vert(a[0], a[1]); vert(b[0], b[1]); vert(d[0], d[1]);
-      const cx = (a[0] + b[0] + d[0]) / 3; const cz = (a[1] + b[1] + d[1]) / 3;
-      paint(cx, ground(cx, cz), cz);
+    const corners = [[i, j], [i, j + 1], [i + 1, j], [i + 1, j], [i, j + 1], [i + 1, j + 1]];
+    for (let t = 0; t < 6; t += 3) {
+      let cx = 0; let cy = 0; let cz = 0;
+      for (const [a, b] of corners.slice(t, t + 3)) { pos.push(xs[a], heights[a][b], zs[b]); cx += xs[a] / 3; cy += heights[a][b] / 3; cz += zs[b] / 3; }
+      paint(cx, cy, cz);
     }
   }
   const g = new THREE.BufferGeometry();
@@ -193,6 +193,59 @@ export function buildSurroundings(phone: boolean, tables: { id: string; zone: st
     }
   });
   group.add(box, clumps);
+
+  // --- Isola di Dino: smooth, rock low down and green on top, out to the right when facing the sea
+  const island = (() => {
+    const RINGS = 22; const SEG = 72;
+    const LEN = 118; const WID = 56; const H = 34;
+    const pos: number[] = []; const col: number[] = []; const idx: number[] = [];
+    const rock = new THREE.Color('#a4977c'); const rockDark = new THREE.Color('#857a63'); const green = new THREE.Color('#566d42'); const greenB = new THREE.Color('#6d8350');
+    const c = new THREE.Color();
+    for (let r = 0; r <= RINGS; r++) {
+      const t = r / RINGS;
+      for (let a = 0; a < SEG; a++) {
+        const th = (a / SEG) * Math.PI * 2;
+        const wob = 1 + 0.1 * Math.sin(th * 3 + 0.6) + 0.07 * Math.sin(th * 7 + 2) + 0.03 * Math.sin(th * 17);
+        const rad = (1 - t) * wob;
+        // Sheer cliff for the first rings, then a rounded green back
+        const px = Math.cos(th) * LEN * rad; const pz = Math.sin(th) * WID * rad;
+        // Sheer cliff first, then a gently domed green back
+        const prof = t < 0.18 ? (t / 0.18) ** 0.7 * 0.62 : 0.62 + 0.38 * Math.sin(((t - 0.18) / 0.82) * Math.PI * 0.5);
+        const y = -10.3 + prof * H + noise(px * 0.09, pz * 0.09) * (t < 0.18 ? 0.8 : 1.6);
+        pos.push(px, y, pz);
+        c.copy(rock).lerp(rockDark, 0.5 + 0.3 * noise(px * 0.2, y * 0.8));
+        const top = smooth(0.15, 0.23, t + 0.015 * noise(px * 0.15, pz * 0.15));
+        c.lerp(green, top).lerp(greenB, top * (0.5 + 0.35 * noise(px * 0.07, pz * 0.11)));
+        col.push(c.r, c.g, c.b);
+      }
+    }
+    for (let r = 0; r < RINGS; r++) for (let a = 0; a < SEG; a++) {
+      const n = (a + 1) % SEG; const A = r * SEG + a; const B = r * SEG + n; const C = (r + 1) * SEG + a; const D = (r + 1) * SEG + n;
+      idx.push(A, C, B, B, C, D);
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    g.setIndex(idx); g.computeVertexNormals();
+    return g;
+  })();
+  const dino = add(island, new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide, fog: false }));
+  dino.position.set(540, 0, 40); dino.rotation.y = Math.PI / 2 - 0.22; // shows its long side to the club
+
+  // Sea all the way to the horizon, under the model's own sea
+  const seaMaterial = new THREE.MeshStandardMaterial({ roughness: 0.75, metalness: 0, fog: false });
+  const seaFar = new THREE.CircleGeometry(2500, 48); seaFar.rotateX(-Math.PI / 2); seaFar.translate(0, -10.32, 0);
+  add(seaFar, seaMaterial);
+
+  // --- Brick path in front of the two bathroom doors, joining the stepping stones
+  const bricks: THREE.Matrix4[] = [];
+  for (let i = 0; i < 18; i++) for (let j = 0; j < 7; j++) {
+    dummy.position.set(-26.1 + i * 0.27 + (j % 2) * 0.13, 0.82, 22.75 + j * 0.15); dummy.rotation.set(0, 0, 0); dummy.scale.set(0.25, 0.04, 0.13); dummy.updateMatrix();
+    bricks.push(dummy.matrix.clone());
+  }
+  const brickMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial(), bricks.length);
+  bricks.forEach((m, i) => { brickMesh.setMatrixAt(i, m); brickMesh.setColorAt(i, tint.set(['#a4634a', '#b0704f', '#97593f'][i % 3])); });
+  group.add(brickMesh);
 
   // --- Road and the access apron up to the gate
   const roadPos: number[] = [];
@@ -314,11 +367,11 @@ export function buildSurroundings(phone: boolean, tables: { id: string; zone: st
   group.add(tt, trunks);
 
   // --- Boulders at the foot of the cliff
-  const nRocks = phone ? 50 : 130;
+  const nRocks = phone ? 30 : 70;
   const rocks = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), new THREE.MeshLambertMaterial({ flatShading: true }), nRocks);
   for (let i = 0; i < nRocks; i++) {
-    const z = lerp(-420, 420, rnd()); const x = coast(z) + 3 + rnd() * 4; const r = 0.4 + rnd() * rnd() * 1.1;
-    dummy.position.set(x, -10.25 + rnd() * 0.2, z); dummy.rotation.set(rnd() * 3, rnd() * 3, rnd() * 3); dummy.scale.set(r, r * 0.5, r); dummy.updateMatrix();
+    const z = lerp(-420, 420, rnd()); const x = coast(z) + rnd() * 5; const r = 0.5 + rnd() * rnd() * 1.4;
+    dummy.position.set(x, terrain(x, z) - r * 0.2, z); dummy.rotation.set(rnd() * 3, rnd() * 3, rnd() * 3); dummy.scale.set(r, r * 0.5, r); dummy.updateMatrix();
     rocks.setMatrixAt(i, dummy.matrix); rocks.setColorAt(i, tint.set(rnd() > 0.5 ? '#4f483d' : '#423c33'));
   }
   group.add(rocks);
@@ -335,30 +388,6 @@ export function buildSurroundings(phone: boolean, tables: { id: string; zone: st
     dummy.position.set(p.x - 3.6, y + 2.2, p.z); dummy.scale.set(1, 4.4, 1); dummy.updateMatrix(); poles.setMatrixAt(i, dummy.matrix);
   });
   group.add(lamps, poles);
-
-  // --- Palms of the club: tapered trunk and fronds with real width
-  const palmParts: THREE.BufferGeometry[] = [];
-  const palmLeaves: THREE.BufferGeometry[] = [];
-  for (const [x, z, y, h] of [[-16.69, -1.42, 0.8, 6.3], [2.14, 29.29, 0, 4.8]]) {
-    const tr = new THREE.CylinderGeometry(0.11, 0.2, h, 7); tr.translate(x, y + h / 2, z); palmParts.push(tr);
-    const fronds = phone ? 10 : 15;
-    for (let f = 0; f < fronds; f++) {
-      const a = f * 2.399; const len = 2.5 + (f % 3) * 0.35; const tilt = 0.35 + (f % 4) * 0.2;
-      const verts: number[] = []; const seg = 6;
-      for (let k = 0; k < seg; k++) {
-        const point = (t: number, side: number) => {
-          const w = 0.34 * Math.sin(Math.PI * Math.min(1, t * 1.05 + 0.04)) * side;
-          const d = len * t; const lift = tilt * d - 0.42 * d * d;
-          return [x + Math.cos(a) * d - Math.sin(a) * w, y + h + lift - Math.abs(w) * 0.25, z + Math.sin(a) * d + Math.cos(a) * w];
-        };
-        const [t0, t1] = [k / seg, (k + 1) / seg];
-        verts.push(...point(t0, -1), ...point(t0, 1), ...point(t1, 1), ...point(t0, -1), ...point(t1, 1), ...point(t1, -1));
-      }
-      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3)); g.computeVertexNormals(); palmLeaves.push(g);
-    }
-  }
-  add(mergeGeometries(palmParts), new THREE.MeshLambertMaterial({ color: '#7b6650' }));
-  add(mergeGeometries(palmLeaves), new THREE.MeshLambertMaterial({ color: '#4f6d38', side: THREE.DoubleSide, flatShading: true }));
 
   // --- Night lights on the outer seats: a lit lantern on each table, low garden lamps along the row
   const glowMat = new THREE.MeshStandardMaterial({ color: '#ffe0ad', emissive: '#ffb765', emissiveIntensity: 1 });
@@ -398,6 +427,7 @@ export function buildSurroundings(phone: boolean, tables: { id: string; zone: st
 
   return {
     group,
+    seaMaterial,
     setMood(mood: Mood) {
       windowMat.emissiveIntensity = mood === 'night' ? 1.1 : 0.12;
       lampMat.emissiveIntensity = mood === 'night' ? 2.4 : 0.3;
