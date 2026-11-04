@@ -1,4 +1,4 @@
-:HL["/Glitz-Club/_next/static/chunks/0oe-7dvwy80s_.css","style"]
+:HL["/Glitz-Club/_next/static/chunks/3ukp111qtv5ll.css","style"]
 :HL["/Glitz-Club/_next/static/media/melodrama_300-s.p.1i9d_z51glxao.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
 :HL["/Glitz-Club/_next/static/media/melodrama_400-s.p.0xxj2i5lel0t_.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
 :HL["/Glitz-Club/_next/static/media/melodrama_500-s.p.41-yca9e23oit.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
@@ -8,4 +8,4 @@
 :HL["/Glitz-Club/_next/static/media/switzer_600-s.p.394xklrezc08f.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
 2:[["children",{"s":"__PAGE__","h":160}]]
 1:[["children",{"s":"il-club","h":96,"c":"$Q2"}]]
-0:{"b":"DCPDFjq7hbrDGQWOLu3SY","t":{"t":{"s":"","h":80,"c":"$Q1"}}}
+0:{"b":"5J2qR2cernVApUhcOOCDc","t":{"t":{"s":"","h":80,"c":"$Q1"}}}
