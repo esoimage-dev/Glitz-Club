@@ -29,7 +29,7 @@ export default function Footer() {
         <div><h4>Seguici</h4><ul><li><a href={INSTAGRAM} target="_blank" rel="noreferrer">Instagram</a></li><li><a href={TIKTOK} target="_blank" rel="noreferrer">TikTok</a></li></ul></div>
       </div>
       <Logo className="ft-logo" />
-      <div className="ft-legal small"><span>{ADDRESS}</span><span>© {new Date().getFullYear()} Glitz Club</span></div>
+      <div className="ft-legal small"><button type="button" className="ft-addr" onClick={() => dispatchEvent(new Event('glitz:where'))}>{ADDRESS}</button><span>© {new Date().getFullYear()} Glitz Club</span></div>
     </footer>
   );
 }

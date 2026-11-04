@@ -133,7 +133,8 @@ ul, ol { list-style: none; }
 .hd-dark:has(.hd-nav a:nth-child(3):hover) + .hd-light .hd-nav a:nth-child(3)::after,
 .hd-dark:has(.hd-nav a:nth-child(4):hover) + .hd-light .hd-nav a:nth-child(4)::after { transform: scaleX(1); transform-origin: left; }
 .hd-dark:has(.hd-logo:hover) + .hd-light .sw { opacity: 1; }
-.hd-dark:has(.hd-burger:hover) + .hd-light .hd-burger { transform: rotate(90deg); }
+.hd-dark:has(.hd-burger:not(.hd-pin):hover) + .hd-light .hd-burger:not(.hd-pin) { transform: rotate(90deg); }
+.hd-dark:has(.hd-pin:hover) + .hd-light .hd-pin { transform: translateY(-2px); }
 .hd-logo { display: block; width: 104px; color: inherit; }
 /* Optical size: at this width the logo's hairlines fall under one pixel and shimmer. A touch of stroke steadies them; the geometry stays the registered one. */
 .hd-logo .logo-live > path { stroke: currentColor; stroke-width: 0.4px; vector-effect: non-scaling-stroke; paint-order: stroke; }
@@ -144,6 +145,8 @@ ul, ol { list-style: none; }
 .hd-light .hd-cta { background: var(--white); color: var(--black); }
 .hd-burger { width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; box-shadow: inset 0 0 0 1px currentColor; transition: transform 0.5s var(--ease); }
 .hd-burger:hover { transform: rotate(90deg); }
+.hd-pin:hover { transform: translateY(-2px); }
+.hd-pin svg { width: 19px; height: 19px; }
 .hd-burger i { position: relative; display: block; width: 16px; height: 8px; }
 .hd-burger i::before, .hd-burger i::after { content: ''; position: absolute; left: 0; right: 0; height: 1.5px; background: currentColor; transition: transform 0.4s var(--ease), top 0.4s var(--ease); }
 .hd-burger i::before { top: 0; } .hd-burger i::after { top: 6.5px; }
@@ -156,9 +159,12 @@ ul, ol { list-style: none; }
   display: grid; grid-template-columns: 1.15fr 1fr; gap: var(--gutter); padding: 96px var(--gutter) var(--gutter);
 }
 .mn-links { display: flex; flex-direction: column; justify-content: center; }
-.mn-links a { display: flex; align-items: baseline; gap: 18px; font-family: var(--display); font-size: clamp(3.2rem, min(10.5vh, 9.5vw), 9rem); line-height: 1.02; transition: transform 0.6s var(--ease), opacity 0.3s; }
+/* The link's box stays put and only its content slides: moving the box itself makes it escape the cursor and flicker */
+.mn-links a { display: block; font-family: var(--display); font-size: clamp(3.2rem, min(10.5vh, 9.5vw), 9rem); line-height: 1.02; transition: opacity 0.3s; }
+.mn-l { display: inline-flex; align-items: baseline; gap: 18px; transition: transform 0.6s var(--ease); }
 .mn-links:hover a { opacity: 0.35; }
-.mn-links a:hover { opacity: 1; transform: translateX(14px); }
+.mn-links a:hover { opacity: 1; }
+.mn-links a:hover .mn-l { transform: translateX(14px); }
 .mn-links small { font-family: var(--text); font-size: var(--t-xs); opacity: 0.7; }
 .mn-visual { position: relative; align-self: stretch; min-height: 0; }
 .mn-visual .arch { position: absolute; inset: 0; }
@@ -180,7 +186,10 @@ ul, ol { list-style: none; }
 .clock svg { width: 34px; height: 18px; overflow: visible; }
 
 /* Dawn footer */
-main:has(.hero) .ft-legal { padding-left: 130px; }
+/* On the home the clock sits at the very bottom: the last line stays above it */
+main:has(.hero) .ft-legal { padding-bottom: 40px; }
+.ft-addr { text-align: left; }
+.ft-addr:hover { text-decoration: underline; }
 .ft-night { position: absolute; inset: 0 0 auto 0; height: 58%; pointer-events: none; }
 .ft { position: relative; color: var(--black); padding: clamp(120px, 22vh, 240px) var(--gutter) var(--gutter); overflow: hidden;
   background: linear-gradient(180deg, #000 0%, #120a35 16%, #3b1d73 30%, #b5457f 48%, #f68f6c 62%, #ffd9b0 76%, #fff 96%); }
@@ -230,7 +239,8 @@ a:hover > .logo-live .sw, .logo-live:hover .sw { opacity: 1; }
   .mbar { display: flex; }
   .clock { display: none; }
   .ft { padding-bottom: 96px; }
-  main:has(.hero) .ft-legal { padding-left: 0; }
+  main:has(.hero) .ft-legal { padding-bottom: 0; }
+  .ft-legal { flex-direction: column; }
   .ft-cols { grid-template-columns: 1fr 1fr; }
   .ft-news { grid-template-columns: 1fr; }
 }
@@ -242,3 +252,17 @@ a:hover > .logo-live .sw, .logo-live:hover .sw { opacity: 1; }
 
 .hd-logo-m { display: none; }
 @media (max-width: 860px) { .hd-logo-m { display: block; } .hd-logo-d { display: none; } }
+
+/* Where we are: the map in an arch, one clear action */
+.wh { position: fixed; inset: 0; z-index: 130; display: grid; place-items: center; padding: 16px; }
+.wh-back { position: absolute; inset: 0; background: rgba(0,0,0,.72); }
+.wh-panel { position: relative; width: min(480px, 100%); max-height: 100%; overflow-y: auto; background: #000; color: #fff; padding: 20px 20px 22px; display: grid; gap: 14px; box-shadow: 0 0 0 1px rgba(255,255,255,.14); }
+.wh-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.wh-map { border-radius: 240px 240px 0 0; overflow: hidden; aspect-ratio: 1 / 1; background: #111; }
+.wh-map iframe { width: 100%; height: calc(100% + 60px); margin-top: -30px; border: 0; display: block; filter: grayscale(.75) contrast(1.02); }
+.wh-panel .btn { width: 100%; background: #fff; color: #000; }
+@media (max-width: 860px) {
+  .wh { align-items: end; padding: 0; }
+  .wh-panel { width: 100%; padding-bottom: max(22px, env(safe-area-inset-bottom)); }
+  .wh-map { aspect-ratio: 4 / 3.4; }
+}

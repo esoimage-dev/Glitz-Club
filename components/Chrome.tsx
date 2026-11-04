@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import Lenis from 'lenis';
 import { LiveLogo } from './Logo';
 import Intro from './Intro';
+import WhereModal from './WhereModal';
 import { INSTAGRAM, SEASON, TIKTOK, WHATSAPP, WHATSAPP_LABEL, mainCta } from '@/lib/data';
 
 const NAV = [
@@ -22,9 +23,9 @@ const HEADER_BAND = 90;
 
 const toTime = (m: number) => `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(Math.floor(m % 60)).padStart(2, '0')}`;
 
-type BarProps = { light?: boolean; path: string; open: boolean; onToggle: () => void; barRef?: React.Ref<HTMLElement> };
+type BarProps = { light?: boolean; path: string; open: boolean; onToggle: () => void; onWhere: () => void; barRef?: React.Ref<HTMLElement> };
 
-function Bar({ light, path, open, onToggle, barRef }: BarProps) {
+function Bar({ light, path, open, onToggle, onWhere, barRef }: BarProps) {
   const suffix = light ? '-l' : '-d';
   return (
     <header ref={barRef} className={`hd ${light ? 'hd-light' : 'hd-dark'} ${path === '/tavoli' ? 'hd-map' : ''}`} aria-hidden={light || undefined} inert={light || undefined}>
@@ -37,6 +38,9 @@ function Bar({ light, path, open, onToggle, barRef }: BarProps) {
       <Link href="/" className="hd-logo hd-logo-d" aria-label="Glitz Club, home"><LiveLogo id={`logo-led${suffix}`} /></Link>
       <div className="hd-right">
         <Link href={mainCta.href} className="btn hd-cta">{mainCta.label}</Link>
+        <button type="button" className="hd-burger hd-pin" aria-label="Dove siamo" title="Dove siamo" onClick={onWhere}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M12 21s6.5-6.2 6.5-11.2a6.5 6.5 0 1 0-13 0C5.5 14.8 12 21 12 21z" /><circle cx="12" cy="9.8" r="2.2" /></svg>
+        </button>
         <button className="hd-burger" aria-label={open ? 'Chiudi il menu' : 'Apri il menu'} aria-expanded={open} onClick={onToggle}><i /></button>
       </div>
     </header>
@@ -48,6 +52,7 @@ export default function Chrome() {
   const path = usePathname().replace(/(.)\/$/, '$1');
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
+  const [where, setWhere] = useState(false);
   const clock = useRef<{ root: HTMLDivElement | null; time: HTMLSpanElement | null; dot: SVGCircleElement | null }>({ root: null, time: null, dot: null });
   const lightBar = useRef<HTMLElement>(null);
   const lenis = useRef<Lenis | null>(null);
@@ -116,13 +121,18 @@ export default function Chrome() {
     return () => { clearTimeout(t); cancelAnimationFrame(raf); removeEventListener('scroll', onS); removeEventListener('resize', onS); };
   }, [path, open]);
 
+  // The footer address opens it too
+  useEffect(() => { const show = () => setWhere(true); addEventListener('glitz:where', show); return () => removeEventListener('glitz:where', show); }, []);
+  useEffect(() => { where ? lenis.current?.stop() : lenis.current?.start(); }, [where]);
+
   const toggle = () => setOpen(!open);
   return (
     <>
       {path === '/' && <Intro />}
       {!open && !fullscreen && <div className="hd-halo" aria-hidden="true" />}
-      <Bar path={path} open={open} onToggle={toggle} />
-      <Bar light path={path} open={open} onToggle={toggle} barRef={lightBar} />
+      <Bar path={path} open={open} onToggle={toggle} onWhere={() => setWhere(true)} />
+      <Bar light path={path} open={open} onToggle={toggle} onWhere={() => setWhere(true)} barRef={lightBar} />
+      <WhereModal open={where} onClose={() => setWhere(false)} />
 
       <AnimatePresence>
         {open && (
@@ -137,14 +147,14 @@ export default function Chrome() {
               {NAV.map((n, i) => (
                 <motion.div key={n.href} initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.22 + i * 0.05, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
                   <Link href={n.href} onMouseEnter={() => setActive(i)} onFocus={() => setActive(i)} onClick={() => setOpen(false)}>
-                    {n.label} <small>{n.note}</small>
+                    <span className="mn-l">{n.label} <small>{n.note}</small></span>
                   </Link>
                 </motion.div>
               ))}
             </nav>
             <div className="mn-visual" aria-hidden="true">
               <div className="arch">
-                {NAV.map((n, i) => <Image key={n.img} src={n.img} alt="" fill sizes="45vw" style={{ opacity: active === i ? 1 : 0 }} />)}
+                {NAV.map((n, i) => <Image key={n.img} src={n.img} alt="" fill sizes="45vw" loading="eager" style={{ opacity: active === i ? 1 : 0 }} />)}
               </div>
             </div>
             <div className="mn-foot small">
