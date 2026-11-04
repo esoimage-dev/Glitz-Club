@@ -18,13 +18,16 @@ const EDGE_2 = 39;
 const EDGE_3 = 47;
 const NORTH = -36;
 const SOUTH = 75.5;
-const ROAD_Y = 0.82;
+const ROAD_Y = 0.9;
 
 // Where the grey access road meets the white ramp (planimetria, plan 570,946 and 650,958)
 const GATE_A: P2 = [-22.5, -0.45];
 const GATE_B: P2 = [-23.05, 3.1];
 
 const PROPERTY: P2[] = [[-23.6, -20], [16, NORTH - 0.5], [48, NORTH - 0.5], [48, SOUTH + 0.5], [25, 72], [-36.2, 72], [-36.2, 17.3], [-28.2, 17], [-24.4, 3.4], [-23.9, -0.9]];
+
+// Lawn past the pool, dropped to the first terrace's level: the pool sits above it, behind the hedge.
+const LOWERED: P2[] = [[12.3, 22.6], [12.3, 26.4], [6.2, 26.4], [3.1, 27.3], [3.1, 49.6], [-9.5, 50.6], [-9.5, 72], [25.5, 72], [25.5, 22], [15, 21]];
 
 const ROAD_LINE = new THREE.CatmullRomCurve3([[-90, -420], [-62, -260], [-42, -120], [-33, -40], [-31, 0], [-38.5, 22], [-42, 60], [-56, 140], [-92, 260], [-120, 420]].map(([x, z]) => new THREE.Vector3(x, 0, z)), false, 'centripetal');
 const ROAD_POINTS = ROAD_LINE.getPoints(170);
@@ -65,6 +68,7 @@ function terrain(x: number, z: number) {
 
 function ground(x: number, z: number) {
   if (x > 15 && x < EDGE_3 + 0.5 && z > NORTH && z < SOUTH) return -6; // under the terraces
+  if (inside(LOWERED, x, z)) return -6; // under the lawn past the pool
   if (inside(PROPERTY, x, z)) return -0.1;
   const y = terrain(x, z);
   const d = x > -8 ? Infinity : roadDistance(x, z);
@@ -72,7 +76,7 @@ function ground(x: number, z: number) {
     // The road cuts a level bench: nearest centre height, blending back into the hillside
     let best = ROAD_POINTS[0]; let bd = Infinity;
     for (const p of ROAD_POINTS) { const k = (p.x - x) ** 2 + (p.z - z) ** 2; if (k < bd) { bd = k; best = p; } }
-    return lerp(roadHeight(best.x, best.z) - 0.08, y, smooth(5, 22, d));
+    return lerp(roadHeight(best.x, best.z) - 0.35, y, smooth(6, 22, d));
   }
   return y;
 }
@@ -142,7 +146,7 @@ export function buildSurroundings(phone: boolean, tables: { id: string; zone: st
   const stone = flat('#cfc9b8');
   const lawn = (c: string) => [flat(c), stone];
   const reversed = (l: P2[]) => [...l].reverse();
-  add(plate([[15.2, NORTH], ...edgeLine(EDGE_1), [25, SOUTH], [25.2, 67.2], [22.2, 24], [12.6, 20.4], [16.7, -23]], T1, 4), lawn('#46603a'));
+  add(plate([[15.2, NORTH], ...edgeLine(EDGE_1), [25.5, SOUTH], [25.5, 72], [-9.5, 72], [-9.5, 50.6], [3.1, 49.6], [3.1, 27.3], [6.2, 26.4], [12.3, 26.4], [12.3, 22.6], [12.9, 20.4], [16.7, -23]], T1, 4), lawn('#46603a'));
   add(plate([...reversed(edgeLine(EDGE_2)), ...edgeLine(EDGE_1)], T2, 4), lawn('#587243'));
   add(plate([...reversed(edgeLine(EDGE_3, 12)), ...edgeLine(EDGE_2)], T3, 7), lawn('#74894f'));
 
@@ -152,10 +156,11 @@ export function buildSurroundings(phone: boolean, tables: { id: string; zone: st
   // Backing behind the vine on the stage wall, so light doesn't come through the leaves
   line([[4.2, -17.45], [-8.2, -17.45], [-20, -16.75]], 0.2, 4.45, 0.25);
   // Clean line between the Riva Deck side and the house lawn, closing the step between the two levels
-  line([[-9.2, 19.25], [22.1, 23.85]], 0.1, 1.45, 0.85);
+  line([[-9.2, 19.25], [12.3, 22.45]], 0.1, 1.45, 0.85);
+  // The pool's hedge: round the white block, along the terracotta and the pool, then round its far end to the house
+  line([[12.3, 22.6], [12.3, 26.4], [6.2, 26.4], [3.1, 27.3], [3.1, 49.6], [-9.5, 50.6], [-9.5, 72]], T1, 1.75, 0.95);
   // Sea side, one on every drop
-  line([[16.9, -23], [12.9, 20.4]], T1, 0.75, 0.9);
-  line([[12.9, 20.4], [22.5, 24], [25.5, 67.2], [25.5, SOUTH]], T1, 1.15, 0.9);
+  line([[16.9, -23], [12.9, 20.4], [12.3, 22.6]], T1, 0.75, 0.9);
   line(edgeLine(EDGE_1), T2, T1 + 1, 0.9);
   line(edgeLine(EDGE_2), T3, T2 + 1, 0.9);
   // Perimeter: road side and both flanks, stepping down with the terraces
@@ -272,7 +277,7 @@ export function buildSurroundings(phone: boolean, tables: { id: string; zone: st
   const wood = new THREE.MeshLambertMaterial({ color: '#8a6749' });
   const loungerParts: THREE.BufferGeometry[] = []; const loungerWood: THREE.BufferGeometry[] = [];
   // Out in the open, between the entrance ramp and the bar, away from the way to the bathrooms
-  for (const [x, z, yaw] of [[-13.6, 10.6, 0.5], [-15.6, 10.2, 0.5], [-18.4, 11.2, -0.35]]) {
+  for (const [x, z, yaw] of [[-13.6, 8.2, Math.PI / 2], [-13.6, 11, Math.PI / 2], [-13.6, 13.8, Math.PI / 2]]) {
     const m = new THREE.Matrix4().compose(new THREE.Vector3(x, 0.8, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, yaw, 0)), new THREE.Vector3(1, 1, 1));
     const part = (list: THREE.BufferGeometry[], w: number, h: number, d: number, px: number, py: number, pz: number, tilt = 0) => {
       const g = new THREE.BoxGeometry(w, h, d); if (tilt) g.rotateX(tilt); g.translate(px, py, pz); g.applyMatrix4(m); list.push(g);
@@ -282,16 +287,16 @@ export function buildSurroundings(phone: boolean, tables: { id: string; zone: st
     part(loungerParts, 0.68, 0.09, 1.42, 0, 0.34, 0.28); part(loungerParts, 0.68, 0.09, 0.68, 0, 0.58, -0.72, 0.62);
   }
   add(mergeGeometries(loungerParts), white); add(mergeGeometries(loungerWood), wood);
-  const tableTop = new THREE.CylinderGeometry(0.3, 0.3, 0.05, 14); tableTop.translate(-14.7, 1.26, 12.2);
-  const tableLeg = new THREE.CylinderGeometry(0.03, 0.05, 0.42, 6); tableLeg.translate(-14.7, 1.03, 12.2);
+  const tableTop = new THREE.CylinderGeometry(0.3, 0.3, 0.05, 14); tableTop.translate(-13.2, 1.26, 9.6);
+  const tableLeg = new THREE.CylinderGeometry(0.03, 0.05, 0.42, 6); tableLeg.translate(-13.2, 1.03, 9.6);
   add(mergeGeometries([tableTop, tableLeg]), white);
   // Low planting scattered on the big lawn around the pool, so it isn't one flat green sheet
-  const clusters: [number, number][] = [[6, 33], [12, 42], [18, 51], [9, 60], [-20, 62], [-30, 50], [-29, 28], [20, 33]];
+  const clusters: [number, number, number][] = [[7, 33, T1], [13, 42, T1], [19, 51, T1], [8, 60, T1], [20, 32, T1], [-20, 62, 0.78], [-30, 50, 0.78], [-29, 28, 0.78]];
   const bushes = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 1), new THREE.MeshLambertMaterial({ flatShading: true }), clusters.length * 4);
-  clusters.forEach(([x, z], i) => {
+  clusters.forEach(([x, z, y], i) => {
     for (let k = 0; k < 4; k++) {
       const a = k * 2.4 + i; const r = 0.45 + rnd() * 0.4; const d = k ? 0.75 : 0;
-      dummy.rotation.set(0, a, 0); dummy.position.set(x + Math.cos(a) * d, 0.78 + r * 0.55, z + Math.sin(a) * d); dummy.scale.set(r, r * 0.8, r); dummy.updateMatrix();
+      dummy.rotation.set(0, a, 0); dummy.position.set(x + Math.cos(a) * d, y + r * 0.55, z + Math.sin(a) * d); dummy.scale.set(r, r * 0.8, r); dummy.updateMatrix();
       bushes.setMatrixAt(i * 4 + k, dummy.matrix); bushes.setColorAt(i * 4 + k, tint.set(['#476737', '#365230', '#617b43', '#a64d88'][(k + i) % 4]));
     }
   });
@@ -312,12 +317,15 @@ export function buildSurroundings(phone: boolean, tables: { id: string; zone: st
   const roadPos: number[] = [];
   const HALF = 3;
   const samples = ROAD_POINTS;
-  for (let i = 0; i < samples.length - 1; i++) {
-    const a = samples[i]; const b = samples[i + 1];
-    const dir = new THREE.Vector3().subVectors(b, a).normalize();
-    const nx = -dir.z * HALF; const nz = dir.x * HALF;
-    const ya = roadHeight(a.x, a.z); const yb = roadHeight(b.x, b.z);
-    roadPos.push(a.x + nx, ya, a.z + nz, a.x - nx, ya, a.z - nz, b.x + nx, yb, b.z + nz, b.x + nx, yb, b.z + nz, a.x - nx, ya, a.z - nz, b.x - nx, yb, b.z - nz);
+  // Each point has one shared cross-section, so neighbouring pieces meet exactly and curves leave no slits
+  const edges = samples.map((p, i) => {
+    const dir = new THREE.Vector3().subVectors(samples[Math.min(i + 1, samples.length - 1)], samples[Math.max(i - 1, 0)]).normalize();
+    const y = roadHeight(p.x, p.z);
+    return { l: [p.x - dir.z * HALF, y, p.z + dir.x * HALF], r: [p.x + dir.z * HALF, y, p.z - dir.x * HALF] };
+  });
+  for (let i = 0; i < edges.length - 1; i++) {
+    const a = edges[i]; const b = edges[i + 1];
+    roadPos.push(...a.l, ...a.r, ...b.l, ...b.l, ...a.r, ...b.r);
   }
   const road = new THREE.BufferGeometry();
   road.setAttribute('position', new THREE.Float32BufferAttribute(roadPos, 3));
