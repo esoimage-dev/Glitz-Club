@@ -7,4 +7,4 @@
 :HL["/Glitz-Club/_next/static/media/switzer_500-s.p.3l_u-a-fiviai.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
 :HL["/Glitz-Club/_next/static/media/switzer_600-s.p.394xklrezc08f.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
 1:[["children",{"s":"__PAGE__","h":160}]]
-0:{"b":"NkCPcChTyRd011xoehsNf","t":{"t":{"s":"","h":80,"c":"$Q1"}}}
+0:{"b":"sThPp65SG_NcXj97kL8d9","t":{"t":{"s":"","h":80,"c":"$Q1"}}}
