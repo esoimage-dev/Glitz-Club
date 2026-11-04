@@ -1,4 +1,4 @@
-:HL["/Glitz-Club/_next/static/chunks/12d9qcy3-8z7r.css","style"]
+:HL["/Glitz-Club/_next/static/chunks/2b2qeedk_ysas.css","style"]
 2:[["children",{"s":"__PAGE__","h":160}]]
 1:[["children",{"s":"/_not-found","h":96,"c":"$Q2"}]]
-0:{"b":"tIdsIVpoDT6iYkVhL3ifn","t":{"t":{"s":"","h":80,"c":"$Q1"}}}
+0:{"b":"NkCPcChTyRd011xoehsNf","t":{"t":{"s":"","h":80,"c":"$Q1"}}}

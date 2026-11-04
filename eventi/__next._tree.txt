@@ -1,4 +1,4 @@
-:HL["/Glitz-Club/_next/static/chunks/12d9qcy3-8z7r.css","style"]
+:HL["/Glitz-Club/_next/static/chunks/2b2qeedk_ysas.css","style"]
 :HL["/Glitz-Club/_next/static/media/melodrama_300-s.p.1i9d_z51glxao.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
 :HL["/Glitz-Club/_next/static/media/melodrama_400-s.p.0xxj2i5lel0t_.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
 :HL["/Glitz-Club/_next/static/media/melodrama_500-s.p.41-yca9e23oit.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
@@ -8,4 +8,4 @@
 :HL["/Glitz-Club/_next/static/media/switzer_600-s.p.394xklrezc08f.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
 2:[["children",{"s":"__PAGE__","h":160}]]
 1:[["children",{"s":"eventi","h":96,"c":"$Q2"}]]
-0:{"b":"tIdsIVpoDT6iYkVhL3ifn","t":{"t":{"s":"","h":80,"c":"$Q1"}}}
+0:{"b":"NkCPcChTyRd011xoehsNf","t":{"t":{"s":"","h":80,"c":"$Q1"}}}
