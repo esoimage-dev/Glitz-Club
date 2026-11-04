@@ -31,6 +31,7 @@ export default function ZoneStory() {
   const ref = useRef<HTMLElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const dots = useRef<HTMLOListElement>(null);
+  const dock = useRef<HTMLDivElement>(null);
   const scene = useRef<ClubScene | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [step, setStep] = useState(-1);
@@ -38,6 +39,9 @@ export default function ZoneStory() {
 
   useMotionValueEvent(p, 'change', (v) => {
     scene.current?.setPathPosition(toPath(v));
+    const on = v > 0.0005 && v < 0.9995;
+    if (dock.current) dock.current.dataset.active = String(on);
+    document.documentElement.dataset.zs = on ? '1' : '0';
     const u = v * N;
     setStep(u < 0.5 ? -1 : Math.min(N - 1, Math.round(u) - 1));
   });
@@ -67,7 +71,7 @@ export default function ZoneStory() {
       if (performance.now() > 4300 && scrollY === lastY) { clearInterval(timer); start(); }
       lastY = scrollY;
     }, 350) : undefined;
-    return () => { disposed = true; clearInterval(timer); io.disconnect(); scene.current?.dispose(); scene.current = null; };
+    return () => { disposed = true; delete document.documentElement.dataset.zs; clearInterval(timer); io.disconnect(); scene.current?.dispose(); scene.current = null; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -88,7 +92,7 @@ export default function ZoneStory() {
   return (
     <section ref={ref} className="zs tone-night" data-tone="night" data-time="1440-1530">
       <div className="zs-stick">
-        <div className="zs-fallback" style={{ opacity: loaded ? 0 : 1 }}><Image src="/media/aereo-sera.jpg" alt="" fill sizes="100vw" /></div>
+        <div className="zs-fallback" style={{ opacity: loaded ? 0 : 1 }}><Image src="/media/aereo-sera.jpg" alt="" fill sizes="(max-width:860px) 80vw, 100vw" /></div>
         <canvas ref={canvas} className="zs-canvas" style={{ opacity: loaded ? 1 : 0 }} aria-hidden="true" />
         <div className="zs-grad" />
         <div className="zs-ui">
@@ -104,7 +108,7 @@ export default function ZoneStory() {
               </Panel>
             ))}
           </div>
-          <div className="zs-bottom">
+          <div ref={dock} className="zs-bottom" data-active="false">
             <ol ref={dots} className="zs-dots" aria-label="Vai a una zona del club">
               {STEPS.map((s, i) => <li key={s.id}><button type="button" data-on={i === step} aria-current={i === step ? 'true' : undefined} onClick={() => goTo(i)}>{s.name}</button></li>)}
             </ol>

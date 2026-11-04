@@ -11,7 +11,7 @@ export function Logo({ className, title = 'Glitz Club' }: { className?: string; 
   );
 }
 
-/** Same lockup with a lap of LED light on hover: used in the header. */
+/** Same lockup, turning LED on hover: used in the header. */
 export function LiveLogo({ id = 'logo-led' }: { id?: string }) {
   return (
     <svg className="logo-live" viewBox={`0 0 ${LOGO_W} ${LOGO_H}`} role="img" aria-label="Glitz Club" fill="currentColor">
@@ -20,7 +20,6 @@ export function LiveLogo({ id = 'logo-led' }: { id?: string }) {
           <stop offset="0" stopColor="#5a5cf7" />
           <stop offset=".55" stopColor="#d41fd0" />
           <stop offset="1" stopColor="#ff8a2a" />
-          <animateTransform attributeName="gradientTransform" type="translate" values={`-${LOGO_W} 0;${LOGO_W} 0`} dur="1.6s" repeatCount="indefinite" />
         </linearGradient>
       </defs>
       <path fillRule="evenodd" d={ALL} />

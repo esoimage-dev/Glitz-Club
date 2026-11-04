@@ -46,7 +46,7 @@ export default function Intro() {
         </defs>
         <path className="intro-glow" fill="url(#led-sweep)" fillRule="evenodd" d={ALL} />
         {ORDER.map((k, i) => (
-          <path key={k} className="st" pathLength={1} d={LOGO_PATHS[k]} style={{ ['--d' as string]: `${i < 5 ? i * 0.1 : 0.55 + (i - 5) * 0.08}s` }} />
+          <path key={k} className="st" pathLength={1000} d={LOGO_PATHS[k]} style={{ ['--d' as string]: `${i < 5 ? i * 0.1 : 0.55 + (i - 5) * 0.08}s` }} />
         ))}
         {ORDER.map((k, i) => (
           <path key={k} className="fl" fillRule="evenodd" d={LOGO_PATHS[k]} style={{ ['--f' as string]: `${1.4 + [0, 0.1, 0.32, 0.05, 0.18, 0.4, 0.4, 0.4, 0.4][i]}s` }} />

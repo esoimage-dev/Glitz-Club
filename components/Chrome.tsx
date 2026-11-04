@@ -27,7 +27,7 @@ type BarProps = { light?: boolean; path: string; open: boolean; onToggle: () => 
 function Bar({ light, path, open, onToggle, barRef }: BarProps) {
   const suffix = light ? '-l' : '-d';
   return (
-    <header ref={barRef} className={`hd ${light ? 'hd-light' : 'hd-dark'}`} aria-hidden={light || undefined} inert={light || undefined}>
+    <header ref={barRef} className={`hd ${light ? 'hd-light' : 'hd-dark'} ${path === '/tavoli' ? 'hd-map' : ''}`} aria-hidden={light || undefined} inert={light || undefined}>
       <div>
         <nav className="hd-nav" aria-label="Principale">
           {NAV.slice(0, 4).map((n) => <Link key={n.href} href={n.href} aria-current={path.startsWith(n.href) ? 'page' : undefined}>{n.label}</Link>)}
@@ -44,7 +44,8 @@ function Bar({ light, path, open, onToggle, barRef }: BarProps) {
 }
 
 export default function Chrome() {
-  const path = usePathname();
+  // Pages builds use trailing slashes
+  const path = usePathname().replace(/(.)\/$/, '$1');
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
   const clock = useRef<{ root: HTMLDivElement | null; time: HTMLSpanElement | null; dot: SVGCircleElement | null }>({ root: null, time: null, dot: null });
@@ -119,7 +120,7 @@ export default function Chrome() {
   return (
     <>
       {path === '/' && <Intro />}
-      {!open && <div className="hd-halo" aria-hidden="true" />}
+      {!open && !fullscreen && <div className="hd-halo" aria-hidden="true" />}
       <Bar path={path} open={open} onToggle={toggle} />
       <Bar light path={path} open={open} onToggle={toggle} barRef={lightBar} />
 

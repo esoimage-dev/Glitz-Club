@@ -30,6 +30,7 @@ const LED = [new THREE.Color('#5a5cf7'), new THREE.Color('#d41fd0'), new THREE.C
 const ledAt = (t: number) => (t < 0.55 ? LED[0].clone().lerp(LED[1], t / 0.55) : LED[1].clone().lerp(LED[2], (t - 0.55) / 0.45));
 
 const isPhone = () => innerWidth < 860;
+const MIN_DPR = () => (isPhone() ? 1.5 : 1);
 
 // Colours bottom to top, plus the glow around where the sun went down, out to sea behind the island.
 const SKY: Record<Mood, { horizon: string; mid: string; top: string; glow: string; glowPower: number }> = {
@@ -225,6 +226,9 @@ export class ClubScene {
     }
     this.paintSea();
     this.applyTableStates();
+    // Nothing but the camera and the sky moves: skip walking a thousand matrices every frame
+    this.scene.updateMatrixWorld(true);
+    this.scene.matrixWorldAutoUpdate = false;
     // Shaders and geometry go to the GPU now, off screen, not on the frame the section scrolls into view.
     await this.renderer.compileAsync(this.scene, this.camera);
     await breathe();
@@ -271,8 +275,8 @@ export class ClubScene {
         if (!ud.base) ud.base = mesh.material as THREE.Material;
         if (!isSel && !inZone) { mesh.material = ud.base; return; }
         if (!ud.lit) ud.lit = (ud.base as THREE.MeshStandardMaterial).clone();
-        ud.lit.emissive?.set(isSel ? '#ffffff' : '#d41fd0');
-        ud.lit.emissiveIntensity = isSel ? 2.2 : 0.35;
+        ud.lit.emissive?.set(isSel ? '#ffb765' : '#d41fd0');
+        ud.lit.emissiveIntensity = isSel ? 0.5 : 0.14;
         mesh.material = ud.lit;
       });
     });
@@ -380,6 +384,7 @@ export class ClubScene {
   private draw() {
     this.needs = false;
     this.sky.group.position.copy(this.camera.position);
+    this.sky.group.updateMatrixWorld(true);
     if (this.composer) this.composer.render(); else this.renderer.render(this.scene, this.camera);
     this.onFrame?.();
   }
@@ -392,8 +397,8 @@ export class ClubScene {
     const avg = this.frames.reduce((a, b) => a + b, 0) / this.frames.length;
     this.frames = [];
     const dpr = this.renderer.getPixelRatio();
-    if (avg > 26 && dpr > 1) {
-      this.renderer.setPixelRatio(Math.max(1, dpr - 0.25));
+    if (avg > 26 && dpr > MIN_DPR()) {
+      this.renderer.setPixelRatio(Math.max(MIN_DPR(), dpr - 0.25));
       this.composer?.setPixelRatio(this.renderer.getPixelRatio());
     }
   }

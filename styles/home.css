@@ -74,7 +74,7 @@
 .zs-ui { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; padding: 88px var(--gutter) calc(var(--bar) + 26px); pointer-events: none; }
 .zs-ui a, .zs-ui button { pointer-events: auto; }
 .zs-copy { position: relative; flex: 1; min-height: 0; }
-.zs-panel { position: absolute; inset: 0 0 auto 0; will-change: opacity, transform; }
+.zs-panel { position: absolute; inset: 0 0 auto 0; }
 .zs-title { max-width: 13ch; }
 .zs-zone { display: grid; gap: 12px; }
 .zs-zone h3 { text-transform: uppercase; }
@@ -127,7 +127,9 @@
   .sunset-p2 { height: 62vh; }
   .sunset-p3 { height: 62vh; }
   .sunset-w { font-size: 34vw; }
-  .archon-svg { width: 124vw; bottom: calc(var(--bar) + 70px); }
+  /* Sits about where the real arch appears in the photo, a touch left like the shot */
+  .archon-svg { width: 92vw; left: 47%; bottom: auto; top: 25%; }
+  .archon-h1 { margin-top: 24vh; }
   .archon-h2 { bottom: calc(var(--bar) + 86px); }
   .sr { grid-template-columns: 1fr auto; padding: 10px 0; }
   .sr-date { grid-column: 1; grid-row: 1; }
@@ -138,8 +140,11 @@
   .season-head { flex-direction: column; gap: 4px; }
   .season-soon { text-align: left; }
   .zs { height: 660vh; }
-  .zs-ui { padding-bottom: calc(var(--bar) + 80px); }
-  .zs-bottom { padding-left: 0; gap: 8px; }
+  .zs-ui { padding-bottom: 0; }
+  /* Docked to the real bottom of the screen while pinned: moves with the browser bar, so no gap. The site's bottom bar steps aside. */
+  .zs-bottom { position: fixed; left: 10px; right: 10px; bottom: max(10px, env(safe-area-inset-bottom)); z-index: 71; padding-left: 0; gap: 6px; opacity: 0; transition: opacity .3s; }
+  .zs-bottom[data-active='true'] { opacity: 1; }
+  .zs-bottom[data-active='false'] * { pointer-events: none; }
   .zs-dots { flex-wrap: nowrap; overflow-x: auto; width: 100%; margin: 0; scrollbar-width: none; }
   .zs-dots::-webkit-scrollbar { display: none; }
   .zs-bottom .btn { width: 100%; }

@@ -3,15 +3,14 @@
 // so even a small relative error wipes out trunks, steps and roof tiles. Only the hedge leaves get thinned.
 import { NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
-import { compactPrimitive, meshopt, prune } from '@gltf-transform/functions';
+import { compactPrimitive, dedup, join, meshopt, prune } from '@gltf-transform/functions';
 import { MeshoptDecoder, MeshoptEncoder } from 'meshoptimizer';
 
-const HEAVY = 20000; // vertices above which a green mesh counts as foliage
 
 await Promise.all([MeshoptDecoder.ready, MeshoptEncoder.ready]);
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ 'meshopt.decoder': MeshoptDecoder, 'meshopt.encoder': MeshoptEncoder });
 
-for (const [out, keep] of [['glitz', 0.9], ['glitz-mobile', 0.28]]) {
+for (const [out, keep, HEAVY] of [['glitz', 0.9, 20000], ['glitz-mobile', 0.2, 5000]]) { // HEAVY: vertices above which a green mesh counts as foliage
   const doc = await io.read('scripts/model-source/glitz-full.glb');
   let seed = 7;
   const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
@@ -32,7 +31,9 @@ for (const [out, keep] of [['glitz', 0.9], ['glitz-mobile', 0.28]]) {
       after += prim.getAttribute('POSITION').getCount();
     }
   }
-  await doc.transform(prune(), meshopt({ encoder: MeshoptEncoder, level: 'medium' }));
+  // Same-colour pieces become one draw call. Tables keep their names: they light up one by one.
+  for (const node of doc.getRoot().listNodes()) if (!/^TABLE_/.test(node.getName())) node.setName('');
+  await doc.transform(dedup(), join({ keepNamed: true }), prune(), meshopt({ encoder: MeshoptEncoder, level: 'medium' }));
   await io.write(`public/models/${out}.glb`, doc);
   console.log(out, before, '->', after);
 }

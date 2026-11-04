@@ -58,7 +58,7 @@ export default function Hero() {
         <Overlay wordY={wordY} wordOp={wordOp} />
         <motion.div className="hero-win" style={{ clipPath: clip }}>
           <motion.div className="hero-photo" style={{ scale }}>
-            <Image src="/media/sofa-dino.jpg" alt="Divani bianchi sulla terrazza del Glitz, davanti all’Isola di Dino" fill priority sizes="100vw" quality={85} style={{ objectPosition: '50% 16%' }} />
+            <Image src="/media/sofa-dino.jpg" alt="Divani bianchi sulla terrazza del Glitz, davanti all’Isola di Dino" fill priority sizes="(max-width:860px) 80vw, 100vw" quality={85} style={{ objectPosition: '50% 16%' }} />
           </motion.div>
           <motion.div className="hero-shade" style={{ opacity: shade }} />
           <div className="hero-foot" />

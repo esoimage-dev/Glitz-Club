@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { SOON, WHATSAPP, events, isPast, longDate, zones, type ZoneId } from '@/lib/data';
 import tablesData from '@/lib/tables.json';
 import type { ClubScene, Mood } from '@/lib/club-scene';
@@ -23,6 +24,7 @@ const centre = (id: ZoneId): [number, number, number] => {
 };
 
 export default function TablePicker() {
+  const router = useRouter();
   const canvas = useRef<HTMLCanvasElement>(null);
   const stage = useRef<HTMLDivElement>(null);
   const scene = useRef<ClubScene | null>(null);
@@ -152,6 +154,9 @@ export default function TablePicker() {
             </button>
           ))}
         </div>
+        <button type="button" className="tp-exit" aria-label="Torna indietro" onClick={() => { if (history.length > 1) router.back(); else router.push('/'); }}>
+          <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M8 2L4 6l4 4" fill="none" stroke="currentColor" strokeWidth="1.5" /></svg>
+        </button>
         <nav className="tp-zonebar" aria-label="Zone del club">
           <button type="button" aria-current={!zone ? 'true' : undefined} onClick={() => pickZone(null)}>Tutte</button>
           {zones.map((z) => <button key={z.id} type="button" aria-current={zone === z.id ? 'true' : undefined} onClick={() => pickZone(z.id)}>{z.name}</button>)}
@@ -168,8 +173,12 @@ export default function TablePicker() {
           ))}
         </div>
         <div className="tp-mood" role="group" aria-label="Luce">
-          <button aria-pressed={mood === 'sunset'} onClick={() => toggleMood('sunset')}>Tramonto</button>
-          <button aria-pressed={mood === 'night'} onClick={() => toggleMood('night')}>Notte</button>
+          <button type="button" className="tp-sun" aria-label="Tramonto" title="Tramonto" aria-pressed={mood === 'sunset'} onClick={() => toggleMood('sunset')}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3.6" /><path d="M12 3.5v2M12 18.5v2M3.5 12h2M18.5 12h2M6 6l1.4 1.4M16.6 16.6L18 18M18 6l-1.4 1.4M7.4 16.6L6 18" /></svg>
+          </button>
+          <button type="button" className="tp-moon" aria-label="Notte" title="Notte" aria-pressed={mood === 'night'} onClick={() => toggleMood('night')}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" aria-hidden="true"><path d="M19 14.2A7.5 7.5 0 0 1 9.8 5a7.5 7.5 0 1 0 9.2 9.2z" /></svg>
+          </button>
         </div>
       </div>
 
