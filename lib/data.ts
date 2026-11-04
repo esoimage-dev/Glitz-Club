@@ -14,8 +14,8 @@ export const TIKTOK = 'https://tiktok.com/@glitzclubofficial';
 export const ADDRESS = 'Contrada Dino, 87020 San Nicola Arcella (CS)';
 
 // Summer 2026 as it actually went: dates from the TicketSms archive and the Instagram posters.
-// When the 2027 programme is out, add its nights here: tickets and table requests switch back on by date.
-export const SEASON = 2026;
+// When the 2027 programme is out, add its nights here and publish: the whole site switches over by date.
+// Header and mobile button become "Biglietti" and open the next night, the hero announces it, the list shows the new season.
 export const events: GlitzEvent[] = [
   { slug: 'cristian-marchi-opening', date: '2026-06-27', name: 'Cristian Marchi', tagline: 'Opening party', lineup: ['Cristian Marchi'], poster: '/posters/2026-06-27-cristian-marchi--opening.jpg' },
   { slug: 'black-party', date: '2026-07-04', name: 'Black Party', tagline: 'Con Wonik', lineup: ['Wonik'], poster: '/posters/2026-07-04-black-party-with-wonik.jpg' },
@@ -30,6 +30,12 @@ export const events: GlitzEvent[] = [
 ];
 
 export const isPast = (iso: string) => new Date(`${iso}T23:59:59`) < new Date();
+export const upcoming = events.filter((e) => !isPast(e.date)).sort((a, b) => a.date.localeCompare(b.date));
+export const SEASON = Number((upcoming[0]?.date ?? events[events.length - 1].date).slice(0, 4));
+export const seasonEvents = events.filter((e) => e.date.startsWith(String(SEASON)));
+export const mainCta = upcoming[0]
+  ? { label: 'Biglietti', href: `/eventi/${upcoming[0].slug}` }
+  : { label: 'Serate', href: '/eventi' };
 
 export const archive = [
   { date: '2026-08-29', name: 'Damante', poster: '2026-08-29-damante' },

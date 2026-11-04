@@ -7,10 +7,10 @@ import { AnimatePresence, motion } from 'motion/react';
 import Lenis from 'lenis';
 import { LiveLogo } from './Logo';
 import Intro from './Intro';
-import { INSTAGRAM, TIKTOK, WHATSAPP, WHATSAPP_LABEL } from '@/lib/data';
+import { INSTAGRAM, SEASON, TIKTOK, WHATSAPP, WHATSAPP_LABEL, mainCta } from '@/lib/data';
 
 const NAV = [
-  { href: '/eventi', label: 'Serate', note: 'estate 2026', img: '/media/fumo-folla.jpg' },
+  { href: '/eventi', label: 'Serate', note: `estate ${SEASON}`, img: '/media/fumo-folla.jpg' },
   { href: '/tavoli', label: 'Tavoli', note: 'scegli dalla mappa', img: '/media/scale-tramonto.jpg' },
   { href: '/il-club', label: 'Il club', note: 'il posto', img: '/media/sofa-dino.jpg' },
   { href: '/privati', label: 'Eventi privati', note: 'tutto per voi', img: '/media/villa-notte.jpg' },
@@ -36,7 +36,7 @@ function Bar({ light, path, open, onToggle, barRef }: BarProps) {
       </div>
       <Link href="/" className="hd-logo hd-logo-d" aria-label="Glitz Club, home"><LiveLogo id={`logo-led${suffix}`} /></Link>
       <div className="hd-right">
-        <Link href="/eventi" className="btn hd-cta">Biglietti</Link>
+        <Link href={mainCta.href} className="btn hd-cta">{mainCta.label}</Link>
         <button className="hd-burger" aria-label={open ? 'Chiudi il menu' : 'Apri il menu'} aria-expanded={open} onClick={onToggle}><i /></button>
       </div>
     </header>
@@ -163,7 +163,7 @@ export default function Chrome() {
       {!fullscreen && (
         <div className="mbar" data-hidden={open}>
           <Link href="/tavoli" className="btn ghost">Tavolo</Link>
-          <Link href="/eventi" className="btn fill">Biglietti</Link>
+          <Link href={mainCta.href} className="btn fill">{mainCta.label}</Link>
         </div>
       )}
     </>

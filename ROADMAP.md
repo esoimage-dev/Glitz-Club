@@ -8,7 +8,7 @@
 - Anteprima biglietto e richiesta tavolo via WhatsApp
 
 ## Dati da confermare (`lib/data.ts`)
-- Sito attuale: mostra l'estate 2026 reale (archivio TicketSms e Instagram). Il calendario 2027 va aggiunto in `events`: biglietti e selezione serata tornano da soli in base alla data
+- Sito attuale: mostra l'estate 2026 reale (archivio TicketSms e Instagram). Il calendario 2027 va aggiunto in `events`: alla pubblicazione il tasto "Serate" diventa "Biglietti" e apre la serata successiva, e tornano annuncio in hero e selezione serata
 - Sottotitoli delle serate 2026 ("In consolle" ecc.): scritti da me, da rivedere. Locandine di agosto ritagliate dagli screenshot: servono gli originali
 - Minimi di spesa per zona, capienze, "2000 persone", prezzi biglietti (questi ultimi sono di esempio)
 - Nome zona: "Sea View" o "Seat View"

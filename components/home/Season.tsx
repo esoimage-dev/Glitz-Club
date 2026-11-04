@@ -3,11 +3,11 @@ import { useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { AnimatePresence, motion, useMotionValue, useSpring } from 'motion/react';
-import { INSTAGRAM, SEASON, SOON, events, isPast, parts } from '@/lib/data';
+import { INSTAGRAM, SEASON, SOON, isPast, parts, seasonEvents, upcoming } from '@/lib/data';
 
 /** The calendar is the poster: names as big as a festival bill, the real artwork follows the cursor. */
 export default function Season({ limit, withLink = true }: { limit?: number; withLink?: boolean }) {
-  const list = limit ? events.slice(0, limit) : events;
+  const list = limit ? seasonEvents.slice(0, limit) : seasonEvents;
   const [hover, setHover] = useState<string | null>(null);
   const box = useRef<HTMLDivElement>(null);
   const mx = useMotionValue(0); const my = useMotionValue(0);
@@ -16,7 +16,7 @@ export default function Season({ limit, withLink = true }: { limit?: number; wit
     <section className="season tone-night" data-tone="night" data-time="1380-1440">
       <div className="season-head">
         <h2 className="d d-l">Estate {SEASON}</h2>
-        <p className="season-soon">{SOON.line} <a className="link-u" href={INSTAGRAM} target="_blank" rel="noreferrer">{SOON.cta}</a></p>
+        {upcoming.length === 0 && <p className="season-soon">{SOON.line} <a className="link-u" href={INSTAGRAM} target="_blank" rel="noreferrer">{SOON.cta}</a></p>}
       </div>
       <div ref={box} className="season-list" onMouseMove={(e) => { const r = box.current!.getBoundingClientRect(); mx.set(e.clientX - r.left); my.set(e.clientY - r.top); }} onMouseLeave={() => setHover(null)}>
         {list.map((ev) => {
