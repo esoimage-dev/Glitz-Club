@@ -20,7 +20,7 @@ export default function Info() {
             ))}
           </div>
           <aside className="in-side">
-            <div className="ph in-img"><Image src="/media/terrazza-giorno.jpg" alt="La terrazza bianca di giorno" fill sizes="(max-width:860px) 100vw, 32vw" /></div>
+            <div data-dark="1" className="ph in-img"><Image src="/media/terrazza-giorno.jpg" alt="La terrazza bianca di giorno" fill sizes="(max-width:860px) 100vw, 32vw" /></div>
             <h2 className="d d-l">Come arrivare</h2>
             <p>{ADDRESS}</p>
             <a className="link-u" href="https://www.google.com/maps/search/?api=1&query=Contrada+Dino+San+Nicola+Arcella" target="_blank" rel="noreferrer">Apri in Maps</a>

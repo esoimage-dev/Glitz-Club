@@ -8,7 +8,8 @@ import { ADDRESS, EMAIL, INSTAGRAM, TIKTOK, TICKET_URL, WHATSAPP, WHATSAPP_LABEL
 export default function Footer() {
   const [state, setState] = useState<'idle' | 'done'>('idle');
   return (
-    <footer className="ft" data-tone="night" data-time="1680-1740">
+    <footer className="ft" data-time="1680-1740">
+      <div className="ft-night" data-dark="1" aria-hidden="true" />
       <div className="ft-top">
         <h2 className="d d-xxl">Ci vediamo<br />all’alba.</h2>
         {state === 'idle' ? (

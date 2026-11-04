@@ -15,7 +15,7 @@
 
 ## Prossimi passi
 1. Video: slot pronti in `components/VideoTile.tsx` e nella home
-2. 3D: alleggerirlo per i telefoni, rifinire materiali e tramonto, inquadrature sul mare
+2. 3D: modifiche al modello (lista da Edoardo), rifinire materiali e tramonto, inquadrature sul mare. Su telefono si usa `public/models/glitz-mobile.glb`: va rigenerato con `node scripts/mobile-model.mjs` a ogni modifica del modello
 3. Backend: database, back office serate e tavoli, disponibilità reale
 4. Ticketing: pagamento, QR firmato, email brandizzata, scanner all'ingresso
 5. Newsletter: mailing list con invio email (il form oggi non salva nulla)

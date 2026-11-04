@@ -24,7 +24,7 @@ export default function Yacht() {
         <p className="lede">Ringhiere bianche, divani bianchi, legno da ponte di coperta. Sotto, il Tirreno. A destra, il palco che aspetta.</p>
         <Link href="/il-club" className="link-u">Guarda il posto</Link>
       </div>
-      <motion.figure className="yacht-c ph" style={{ y: c }}>
+      <motion.figure data-dark="1" className="yacht-c ph" style={{ y: c }}>
         <Image src="/media/arco-giorno.jpg" alt="L’arco e la terrazza di giorno, con il mare dietro" fill sizes="(max-width:860px) 100vw, 62vw" />
       </motion.figure>
     </section>

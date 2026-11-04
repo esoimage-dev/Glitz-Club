@@ -33,6 +33,8 @@ const SKY: Record<Mood, [string, string, string, string]> = {
 const LED = [new THREE.Color('#5a5cf7'), new THREE.Color('#d41fd0'), new THREE.Color('#ff8a2a')];
 const ledAt = (t: number) => (t < 0.55 ? LED[0].clone().lerp(LED[1], t / 0.55) : LED[1].clone().lerp(LED[2], (t - 0.55) / 0.45));
 
+const isPhone = () => innerWidth < 860;
+
 function skyTexture(mood: Mood) {
   const c = document.createElement('canvas');
   c.width = 4; c.height = 512;
@@ -67,15 +69,19 @@ export class ClubScene {
   mood: Mood = 'night';
 
   constructor(private canvas: HTMLCanvasElement, opts: { interactive?: boolean } = {}) {
-    const low = innerWidth < 860 || (navigator.hardwareConcurrency || 8) <= 4;
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: !low, powerPreference: 'high-performance', preserveDrawingBuffer: false });
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio, low ? 1.25 : 1.75));
+    const low = isPhone() || (navigator.hardwareConcurrency || 8) <= 4;
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance', preserveDrawingBuffer: false });
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.camera = new THREE.PerspectiveCamera(30, 1, 0.5, 2600);
     this.controls = new OrbitControls(this.camera, canvas);
     Object.assign(this.controls, { enableDamping: true, dampingFactor: 0.08, minDistance: 14, maxDistance: 130, maxPolarAngle: 1.42, enabled: !!opts.interactive, zoomToCursor: true });
     this.controls.addEventListener('change', () => { this.needs = true; });
+    // OrbitControls sets touch-action:none on connect, even disabled: that alone kills page scroll on phones.
+    if (!opts.interactive) this.controls.disconnect();
+    canvas.addEventListener('webglcontextlost', this.onContextLost);
+    canvas.addEventListener('webglcontextrestored', this.onContextRestored);
 
     const hemi = new THREE.HemisphereLight('#7a78d8', '#0a0a18', 1.1);
     const sun = new THREE.DirectionalLight('#a9b4ff', 0.6);
@@ -107,9 +113,17 @@ export class ClubScene {
     this.raf = requestAnimationFrame(this.loop);
   }
   private ro: ResizeObserver;
+  /** Called when the phone reclaims the GPU: the page falls back to the photo instead of a black flash. */
+  onContextChange?: (alive: boolean) => void;
+  private onContextLost = (e: Event) => { e.preventDefault(); this.onContextChange?.(false); };
+  private onContextRestored = () => { this.needs = true; this.onContextChange?.(true); };
+  private size = '';
+  private frames: number[] = [];
+  private lastRender = 0;
 
-  async load(url = `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/models/glitz.glb`) {
+  async load(url = `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/models/${isPhone() ? 'glitz-mobile' : 'glitz'}.glb`) {
     const loader = new GLTFLoader();
+    MeshoptDecoder.useWorkers?.(2);
     loader.setMeshoptDecoder(MeshoptDecoder);
     const gltf = await loader.loadAsync(url);
     this.scene.add(gltf.scene);
@@ -239,6 +253,9 @@ export class ClubScene {
   private resize() {
     const r = this.canvas.getBoundingClientRect();
     if (!r.width || !r.height) return;
+    const key = `${r.width}x${r.height}`;
+    if (key === this.size) return;
+    this.size = key;
     this.renderer.setSize(r.width, r.height, false);
     this.composer?.setSize(r.width, r.height);
     this.composer?.setPixelRatio(this.renderer.getPixelRatio());
@@ -246,7 +263,28 @@ export class ClubScene {
     // Portrait screens need a wider lens, otherwise the club falls off the sides.
     this.camera.fov = r.width / r.height < 0.9 ? 46 : 30;
     this.camera.updateProjectionMatrix();
-    this.needs = true;
+    // Resizing clears the canvas: draw in the same frame or it flashes black.
+    this.draw();
+  }
+
+  private draw() {
+    this.needs = false;
+    if (this.composer) this.composer.render(); else this.renderer.render(this.scene, this.camera);
+    this.onFrame?.();
+  }
+
+  /** Keeps it sharp where the phone can take it: sheds resolution only if frames stay slow while moving. */
+  private adapt(now: number) {
+    if (now - this.lastRender < 200) this.frames.push(now - this.lastRender);
+    this.lastRender = now;
+    if (this.frames.length < 20) return;
+    const avg = this.frames.reduce((a, b) => a + b, 0) / this.frames.length;
+    this.frames = [];
+    const dpr = this.renderer.getPixelRatio();
+    if (avg > 38 && dpr > 1.25) {
+      this.renderer.setPixelRatio(Math.max(1.25, dpr - 0.25));
+      this.composer?.setPixelRatio(this.renderer.getPixelRatio());
+    }
   }
 
   private loop(now: number) {
@@ -262,14 +300,15 @@ export class ClubScene {
     }
     if (this.controls.enabled) this.controls.update(); else if (this.fly) this.camera.lookAt(this.controls.target);
     if (!this.needs) return;
-    this.needs = false;
-    if (this.composer) this.composer.render(); else this.renderer.render(this.scene, this.camera);
-    this.onFrame?.();
+    this.adapt(now);
+    this.draw();
   }
 
   dispose() {
     cancelAnimationFrame(this.raf);
     this.ro.disconnect();
+    this.canvas.removeEventListener('webglcontextlost', this.onContextLost);
+    this.canvas.removeEventListener('webglcontextrestored', this.onContextRestored);
     this.controls.dispose();
     this.renderer.dispose();
   }

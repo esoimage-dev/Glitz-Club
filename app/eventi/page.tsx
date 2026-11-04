@@ -24,7 +24,7 @@ export default function Eventi() {
                 const d = parts(a.date);
                 return (
                   <li key={a.poster}>
-                    <div className="ph arc-img"><Image src={`/posters/${a.poster}.jpg`} alt={`Locandina di ${a.name}`} fill sizes="(max-width:860px) 50vw, 25vw" /></div>
+                    <div data-dark="1" className="ph arc-img"><Image src={`/posters/${a.poster}.jpg`} alt={`Locandina di ${a.name}`} fill sizes="(max-width:860px) 50vw, 25vw" /></div>
                     <p className="arc-name">{a.name}<span className="dim"> {d.day} {d.month}</span></p>
                   </li>
                 );

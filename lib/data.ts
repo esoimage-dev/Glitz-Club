@@ -12,7 +12,7 @@ export const TIKTOK = 'https://tiktok.com/@glitzclubofficial';
 export const ADDRESS = 'Contrada Dino, 87020 San Nicola Arcella (CS)';
 
 export const events: GlitzEvent[] = [
-  { slug: 'damante-opening', date: '2027-06-26', name: 'Damante', tagline: 'Si apre la stagione', lineup: ['Andrea Damante', 'Resident Glitz'], poster: '/posters/2027-06-26.jpg' },
+  { slug: 'damante-opening', date: '2027-06-26', name: 'Damante', tagline: 'Apre la stagione', lineup: ['Andrea Damante', 'Resident Glitz'], poster: '/posters/2027-06-26.jpg' },
   { slug: 'face-to-face', date: '2027-07-03', name: 'Face to Face', tagline: 'Melodic techno, a due', lineup: ['Wonik', 'Mauro Milano'], poster: '/posters/2027-07-03.jpg' },
   { slug: 'ludwig', date: '2027-07-10', name: 'Ludwig', tagline: 'La notte urban', lineup: ['Raul Dumitras', 'Warm-up Riccardo Lena'], poster: '/posters/2027-07-10.jpg' },
   { slug: 'attenzione-instabile', date: '2027-07-17', name: 'A.I.', tagline: 'Attenzione instabile', lineup: ['A.I. Collective', 'Guest da annunciare'] },

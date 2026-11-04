@@ -92,16 +92,16 @@
 .tp-note { margin-top: auto; }
 
 /* Club */
-.cl-hero { position: relative; height: 100vh; height: 100svh; overflow: hidden; display: flex; align-items: flex-end; padding: var(--gutter); }
+.cl-hero { position: relative; height: 100vh; height: 100lvh; overflow: hidden; display: flex; align-items: flex-end; padding: var(--gutter); }
 .cl-hero img { object-fit: cover; opacity: .9; }
 .cl-hero h1 { position: relative; }
 .cl-story { padding: clamp(90px, 16vh, 170px) var(--gutter); display: grid; grid-template-columns: repeat(12, 1fr); gap: 50px var(--gutter); }
 .cl-story > .d { grid-column: 1 / 11; }
 .cl-story-b { grid-column: 6 / 13; display: grid; grid-template-columns: 1fr 1fr; gap: var(--gutter); align-items: end; }
-.cl-zone { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; display: flex; align-items: flex-end; }
+.cl-zone { position: sticky; top: 0; height: 100vh; height: 100lvh; overflow: hidden; display: flex; align-items: flex-end; }
 .cl-zone img { object-fit: cover; }
 .cl-zone::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.05) 35%, rgba(0,0,0,.72) 100%); }
-.cl-zone-t { position: relative; z-index: 1; padding: var(--gutter); width: 100%; display: grid; gap: 18px; text-transform: none; }
+.cl-zone-t { position: relative; z-index: 1; padding: var(--gutter) var(--gutter) calc(var(--bar) + var(--gutter)); width: 100%; display: grid; gap: 18px; text-transform: none; }
 .cl-zone-t h2 { text-transform: uppercase; }
 .cl-zone-b { display: flex; justify-content: space-between; align-items: flex-end; gap: 22px; flex-wrap: wrap; }
 .cl-zone .btn { background: #fff; color: #000; }
@@ -164,7 +164,7 @@
   .evd-body, .pv-grid, .in-grid, .cl-artist { grid-template-columns: 1fr; }
   .evd-info, .pv-left, .in-side { position: static; }
   .evd-actions .btn { flex: 1 1 100%; }
-  .tp-page { grid-template-columns: 1fr; grid-template-rows: 48dvh 1fr; }
+  .tp-page { grid-template-columns: 1fr; grid-template-rows: 48svh 1fr; }
   .tp-panel { padding: 18px 16px 18px; }
   .tp-zones .d { font-size: 1.9rem; }
   .tp-zm { font-size: 1.1rem; padding: 5px 11px 7px; }
@@ -172,6 +172,7 @@
   .cl-story > .d, .cl-story-b { grid-column: 1 / -1; }
   .cl-story-b { grid-template-columns: 1fr; }
   .cl-artist-img { width: 78%; }
+  .cl-zone-t { padding-bottom: calc(var(--bar) + 84px); }
   .pv-two { grid-template-columns: 1fr; }
   .br-logos { grid-template-columns: 1fr; }
   .br-cols { grid-template-columns: 1fr 1fr; }

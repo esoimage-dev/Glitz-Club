@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { motion, useMotionTemplate, useScroll, useTransform, type MotionValue } from 'motion/react';
+import { motion, useMotionTemplate, useMotionValueEvent, useScroll, useTransform, type MotionValue } from 'motion/react';
 import { Logo } from '../Logo';
 import { events, longDate } from '@/lib/data';
 
@@ -16,16 +16,13 @@ function Overlay({ dark, wordY, wordOp }: { dark?: boolean; wordY: MotionValue<s
       </motion.div>
       <motion.div className="hero-bottom" style={{ opacity: wordOp }}>
         <p className="hero-place">San Nicola Arcella,<br />davanti all’Isola di Dino</p>
-        <div className="hero-next">
-          <p>Si riapre {longDate(next.date)}<br /><span className="dim">{next.name}, {next.tagline.toLowerCase()}</span></p>
-          <Link href={`/eventi/${next.slug}`} className="btn btn-solid">Biglietti</Link>
-        </div>
+        <Link href={`/eventi/${next.slug}`} className="hero-next">Si riapre {longDate(next.date)}<br />{next.name} {next.tagline.toLowerCase()}</Link>
       </motion.div>
     </div>
   );
 }
 
-const WORDS = ['Il', 'soffitto', 'è', 'il', 'cielo.', 'Il', 'fondale', 'è', 'l’Isola', 'di', 'Dino.'];
+const WORDS = ['Il', 'soffitto', 'è', 'il', 'cielo.', 'Il', 'fondale', 'è', 'il', 'mare.'];
 
 function Word({ w, i, p }: { w: string; i: number; p: MotionValue<number> }) {
   const s = 0.5 + (i / WORDS.length) * 0.32;
@@ -47,16 +44,20 @@ export default function Hero() {
   const wordY = useTransform(p, [0, 0.34], ['0vh', '-16vh']);
   const wordOp = useTransform(p, [0.14, 0.34], [1, 0]);
   const shade = useTransform(p, [0.42, 0.56], [0, 0.42]);
+  const stick = useRef<HTMLDivElement>(null);
+  // Once the photo fills the top of the screen the header sits on it, not on white.
+  useMotionValueEvent(p, 'change', (v) => { if (stick.current) stick.current.dataset.dark = v >= 0.38 ? '1' : '0'; });
 
   return (
     <section ref={ref} className="hero tone-day" data-tone="day" data-time="1080-1140">
-      <div className="hero-stick">
+      <div ref={stick} className="hero-stick">
         <Overlay wordY={wordY} wordOp={wordOp} />
         <motion.div className="hero-win" style={{ clipPath: clip }}>
           <motion.div className="hero-photo" style={{ scale }}>
             <Image src="/media/sofa-dino.jpg" alt="Divani bianchi sulla terrazza del Glitz, davanti all’Isola di Dino" fill priority sizes="100vw" quality={85} style={{ objectPosition: '50% 16%' }} />
           </motion.div>
           <motion.div className="hero-shade" style={{ opacity: shade }} />
+          <div className="hero-foot" />
           <Overlay dark wordY={wordY} wordOp={wordOp} />
           <p className="hero-claim d d-xxl">{WORDS.map((w, i) => <Word key={i} w={w} i={i} p={p} />)}</p>
         </motion.div>

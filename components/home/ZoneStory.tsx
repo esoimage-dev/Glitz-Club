@@ -12,6 +12,7 @@ const STEPS = zones;
 export default function ZoneStory() {
   const ref = useRef<HTMLElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
+  const dots = useRef<HTMLOListElement>(null);
   const scene = useRef<ClubScene | null>(null);
   const shots = useRef<Shot[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -31,8 +32,8 @@ export default function ZoneStory() {
 
   useMotionValueEvent(p, 'change', (v) => {
     apply(v);
-    const n = STEPS.length + 1;
-    setStep(Math.min(STEPS.length - 1, Math.floor(v * n * 1.0001) - 1));
+    // Text changes while the camera is still travelling, so it lands together with the view.
+    setStep(Math.min(STEPS.length - 1, Math.floor(v * STEPS.length + 0.33) - 1));
   });
 
   useEffect(() => {
@@ -46,6 +47,7 @@ export default function ZoneStory() {
       const s = new m.ClubScene(canvas.current);
       scene.current = s;
       shots.current = [m.SHOTS.sea, ...STEPS.map((z) => m.SHOTS[z.id])];
+      s.onContextChange = (alive) => { setLoaded(alive); if (alive) apply(p.get()); };
       await s.load();
       if (disposed) return s.dispose();
       apply(p.get());
@@ -55,6 +57,21 @@ export default function ZoneStory() {
     return () => { disposed = true; io.disconnect(); scene.current?.dispose(); scene.current = null; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /** Jumps to the moment the camera rests on that zone. */
+  const goTo = (i: number) => {
+    const el = ref.current; if (!el) return;
+    const v = Math.min(1, (i + 1.08) / STEPS.length);
+    const y = el.getBoundingClientRect().top + scrollY + v * (el.offsetHeight - innerHeight);
+    const lenis = (window as unknown as { __lenis?: { scrollTo: (y: number, o: object) => void } }).__lenis;
+    if (lenis) lenis.scrollTo(y, { duration: 1.6 }); else scrollTo({ top: y, behavior: 'smooth' });
+  };
+
+  // On phones the zone row scrolls sideways: keep the current one in view.
+  useEffect(() => {
+    const row = dots.current; const btn = row?.querySelector<HTMLElement>('[data-on="true"]');
+    if (row && btn && row.scrollWidth > row.clientWidth) row.scrollTo({ left: btn.offsetLeft - (row.clientWidth - btn.offsetWidth) / 2, behavior: 'smooth' });
+  }, [step]);
 
   const z = step >= 0 ? STEPS[step] : null;
   return (
@@ -74,8 +91,8 @@ export default function ZoneStory() {
             </div>
           )}
           <div className="zs-bottom">
-            <ol className="zs-dots" aria-label="Zone del club">
-              {STEPS.map((s, i) => <li key={s.id} data-on={i === step}>{s.name}</li>)}
+            <ol ref={dots} className="zs-dots" aria-label="Vai a una zona del club">
+              {STEPS.map((s, i) => <li key={s.id}><button type="button" data-on={i === step} aria-current={i === step ? 'true' : undefined} onClick={() => goTo(i)}>{s.name}</button></li>)}
             </ol>
             <Link href={z ? `/tavoli?zona=${z.id}` : '/tavoli'} className="btn btn-led">Scegli il tavolo sulla mappa</Link>
           </div>

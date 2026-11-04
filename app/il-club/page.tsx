@@ -35,7 +35,7 @@ export default function Club() {
         ))}
       </div>
       <section className="cl-artist tone-day" data-tone="day">
-        <div className="arch ph cl-artist-img"><Image src="/media/palma-piscina.jpg" alt="La piscina con vista mare dell’area artisti" fill sizes="(max-width:860px) 80vw, 36vw" /></div>
+        <div data-dark="1" className="arch ph cl-artist-img"><Image src="/media/palma-piscina.jpg" alt="La piscina con vista mare dell’area artisti" fill sizes="(max-width:860px) 80vw, 36vw" /></div>
         <div>
           <h2 className="d d-xl">Anche gli artisti vogliono la vista.</h2>
           <p className="lede" style={{ marginTop: 22 }}>L’area riservata ha piscina panoramica, camerino privato e ingresso separato.</p>
