@@ -1,7 +1,9 @@
 // Single source of content until the back office exists. Everything here moves to the database later.
 export type GlitzEvent = {
-  slug: string; date: string; name: string; tagline: string; lineup: string[]; poster?: string;
+  slug: string; date: string; name: string; tagline: string; lineup: string[]; poster?: string; doors?: string;
 };
+
+export const SOON = { line: 'Estate 2027 uscirà presto.', cta: 'Tenetevi connessi nel posto giusto.' };
 
 export const TICKET_URL = 'https://www.ticketsms.it/glitz-club';
 export const WHATSAPP = 'https://wa.me/393444289232';
@@ -11,21 +13,29 @@ export const INSTAGRAM = 'https://instagram.com/glitzclubofficial';
 export const TIKTOK = 'https://tiktok.com/@glitzclubofficial';
 export const ADDRESS = 'Contrada Dino, 87020 San Nicola Arcella (CS)';
 
+// Summer 2026 as it actually went: dates from the TicketSms archive and the Instagram posters.
+// When the 2027 programme is out, add its nights here: tickets and table requests switch back on by date.
+export const SEASON = 2026;
 export const events: GlitzEvent[] = [
-  { slug: 'damante-opening', date: '2027-06-26', name: 'Damante', tagline: 'Apre la stagione', lineup: ['Andrea Damante', 'Resident Glitz'], poster: '/posters/2027-06-26.jpg' },
-  { slug: 'face-to-face', date: '2027-07-03', name: 'Face to Face', tagline: 'Melodic techno, a due', lineup: ['Wonik', 'Mauro Milano'], poster: '/posters/2027-07-03.jpg' },
-  { slug: 'ludwig', date: '2027-07-10', name: 'Ludwig', tagline: 'La notte urban', lineup: ['Raul Dumitras', 'Warm-up Riccardo Lena'], poster: '/posters/2027-07-10.jpg' },
-  { slug: 'attenzione-instabile', date: '2027-07-17', name: 'A.I.', tagline: 'Attenzione instabile', lineup: ['A.I. Collective', 'Guest da annunciare'] },
-  { slug: 'mamacita', date: '2027-07-24', name: 'Mamacita', tagline: 'Reggaeton fino al mattino', lineup: ['Mamacita DJs', 'Latin show'] },
-  { slug: 'ludwig-house-disco', date: '2027-08-06', name: 'Ludwig', tagline: 'House e disco', lineup: ['Ludwig', 'Resident Marco Cavax'] },
-  { slug: 'pagante-ferragosto', date: '2027-08-14', name: 'Pagante', tagline: 'La notte di Ferragosto', lineup: ['Il Pagante', 'Live e DJ set'] },
-  { slug: 'bob-sinclar', date: '2027-08-21', name: 'Bob Sinclar', tagline: 'Headliner internazionale', lineup: ['Bob Sinclar', 'Opening Angelica Nova'] },
-  { slug: 'gue', date: '2027-08-27', name: 'Guè', tagline: 'Live in concerto', lineup: ['Guè', 'DJ Harsh'] },
-  { slug: 'mamacita-closing', date: '2027-08-28', name: 'Mamacita', tagline: "L'ultima notte d'estate", lineup: ['Mamacita DJs', 'Special guest e fuochi'] },
+  { slug: 'cristian-marchi-opening', date: '2026-06-27', name: 'Cristian Marchi', tagline: 'Opening party', lineup: ['Cristian Marchi'], poster: '/posters/2026-06-27-cristian-marchi--opening.jpg' },
+  { slug: 'black-party', date: '2026-07-04', name: 'Black Party', tagline: 'Con Wonik', lineup: ['Wonik'], poster: '/posters/2026-07-04-black-party-with-wonik.jpg' },
+  { slug: 'james-carter', date: '2026-07-11', name: 'James Carter', tagline: 'In consolle', lineup: ['James Carter'], poster: '/posters/2026-07-11-james-carter.jpg' },
+  { slug: 'ladies-night', date: '2026-07-18', name: 'Ladies Night', tagline: 'La notte delle ragazze', lineup: ['Ladies Night'], poster: '/posters/2026-07-18-ladies-night.jpg' },
+  { slug: 'thalab', date: '2026-07-25', name: 'Thalab', tagline: 'In consolle', lineup: ['Thalab'], poster: '/posters/2026-07-25-thalab.jpg' },
+  { slug: 'mamacita', date: '2026-08-01', name: 'Mamacita', tagline: 'Summer tour', lineup: ['Mamacita'], poster: '/posters/2026-08-01-mamacita.jpg' },
+  { slug: 'glitz-room', date: '2026-08-06', name: 'Glitz Room', tagline: 'Il Glitz in un’altra veste', lineup: ['Dalle 19:30 alle 01:00', 'Ingresso omaggio'], poster: '/posters/2026-08-06-glitz-room.jpg', doors: 'Dalle 19:30' },
+  { slug: 'ludwig', date: '2026-08-08', name: 'Ludwig', tagline: 'In consolle', lineup: ['Ludwig'], poster: '/posters/2026-08-08-ludwig.jpg' },
+  { slug: 'face-to-face', date: '2026-08-22', name: 'Face to Face', tagline: 'Wonik e Mauro Milano', lineup: ['Wonik', 'Mauro Milano'], poster: '/posters/2026-08-22-face-to-face.jpg' },
+  { slug: 'damante', date: '2026-08-29', name: 'Damante', tagline: 'In consolle', lineup: ['Damante', 'Opening Wonik e Mauro Milano'], poster: '/posters/2026-08-29-damante.jpg' },
 ];
 
+export const isPast = (iso: string) => new Date(`${iso}T23:59:59`) < new Date();
+
 export const archive = [
+  { date: '2026-08-29', name: 'Damante', poster: '2026-08-29-damante' },
+  { date: '2026-08-22', name: 'Face to Face', poster: '2026-08-22-face-to-face' },
   { date: '2026-08-08', name: 'Ludwig', poster: '2026-08-08-ludwig' },
+  { date: '2026-08-06', name: 'Glitz Room', poster: '2026-08-06-glitz-room' },
   { date: '2026-08-01', name: 'Mamacita', poster: '2026-08-01-mamacita' },
   { date: '2026-07-25', name: 'Thalab', poster: '2026-07-25-thalab' },
   { date: '2026-07-18', name: 'Ladies Night', poster: '2026-07-18-ladies-night' },

@@ -1,12 +1,9 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { motion, useMotionTemplate, useMotionValueEvent, useScroll, useTransform, type MotionValue } from 'motion/react';
 import { Logo } from '../Logo';
-import { events, longDate } from '@/lib/data';
-
-const next = events[0];
+import { INSTAGRAM } from '@/lib/data';
 
 function Overlay({ dark, wordY, wordOp }: { dark?: boolean; wordY: MotionValue<string>; wordOp: MotionValue<number> }) {
   return (
@@ -16,7 +13,7 @@ function Overlay({ dark, wordY, wordOp }: { dark?: boolean; wordY: MotionValue<s
       </motion.div>
       <motion.div className="hero-bottom" style={{ opacity: wordOp }}>
         <p className="hero-place">San Nicola Arcella,<br />davanti all’Isola di Dino</p>
-        <Link href={`/eventi/${next.slug}`} className="hero-next">Si riapre {longDate(next.date)}<br />{next.name} {next.tagline.toLowerCase()}</Link>
+        <a href={INSTAGRAM} target="_blank" rel="noreferrer" className="hero-next">Estate 2027 uscirà presto.<br />Tenetevi connessi.</a>
       </motion.div>
     </div>
   );

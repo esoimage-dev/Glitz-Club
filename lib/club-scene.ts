@@ -98,7 +98,9 @@ export class ClubScene {
     this.scene.add(hemi, sun, ...floor, ...strips);
 
     if (!low) {
-      this.composer = new EffectComposer(this.renderer);
+      this.renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+      // Bloom bypasses canvas antialiasing, so the render target does its own.
+      this.composer = new EffectComposer(this.renderer, new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 }));
       this.composer.addPass(new RenderPass(this.scene, this.camera));
       this.composer.addPass(new UnrealBloomPass(new THREE.Vector2(512, 512), 0.42, 0.55, 0.96));
       this.composer.addPass(new OutputPass());
@@ -120,6 +122,10 @@ export class ClubScene {
   private size = '';
   private frames: number[] = [];
   private lastRender = 0;
+  private path: { pos: THREE.CatmullRomCurve3; target: THREE.CatmullRomCurve3; length: number } | null = null;
+  private pathGoal = 0;
+  private pathNow: number | null = null;
+  private lastLoop = 0;
 
   async load(url = `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/models/${isPhone() ? 'glitz-mobile' : 'glitz'}.glb`) {
     const loader = new GLTFLoader();
@@ -163,9 +169,11 @@ export class ClubScene {
       });
     }
     this.paintSea();
-    this.ready = true;
-    this.needs = true;
     this.applyTableStates();
+    // Shaders and geometry go to the GPU now, off screen, not on the frame the section scrolls into view.
+    await this.renderer.compileAsync(this.scene, this.camera);
+    this.draw();
+    this.ready = true;
   }
 
   setMood(mood: Mood) {
@@ -223,11 +231,26 @@ export class ClubScene {
     this.needs = true;
   }
 
-  /** Blend between two shots: used by the scroll story on the home page. */
-  blend(a: Shot, b: Shot, t: number) {
-    const e = t * t * (3 - 2 * t);
-    this.camera.position.set(...a.pos).lerp(new THREE.Vector3(...b.pos), e);
-    this.controls.target.set(...a.target).lerp(new THREE.Vector3(...b.target), e);
+  /** Lays a smooth curve through the shots: the scroll story travels along it instead of cutting between poses. */
+  setPath(shots: Shot[]) {
+    this.path = {
+      pos: new THREE.CatmullRomCurve3(shots.map((s) => new THREE.Vector3(...s.pos)), false, 'centripetal'),
+      target: new THREE.CatmullRomCurve3(shots.map((s) => new THREE.Vector3(...s.target)), false, 'centripetal'),
+      length: shots.length - 1,
+    };
+  }
+
+  /** u runs from 0 to the last shot. The camera eases towards it, so it glides even when the scroll is jerky. */
+  setPathPosition(u: number, immediate = false) {
+    this.pathGoal = u;
+    if (immediate || this.pathNow === null) { this.pathNow = u; this.applyPath(); } else this.needs = true;
+  }
+
+  private applyPath() {
+    if (!this.path || this.pathNow === null) return;
+    const t = Math.min(1, Math.max(0, this.pathNow / this.path.length));
+    this.path.pos.getPoint(t, this.camera.position);
+    this.path.target.getPoint(t, this.controls.target);
     this.camera.lookAt(this.controls.target);
     this.needs = true;
   }
@@ -289,6 +312,12 @@ export class ClubScene {
 
   private loop(now: number) {
     this.raf = requestAnimationFrame(this.loop);
+    const dt = Math.min(0.05, (now - this.lastLoop) / 1000);
+    this.lastLoop = now;
+    if (this.pathNow !== null && Math.abs(this.pathGoal - this.pathNow) > 0.0005) {
+      this.pathNow += (this.pathGoal - this.pathNow) * (1 - Math.exp(-dt * 3.4));
+      this.applyPath();
+    }
     if (this.fly) {
       const f = this.fly;
       const t = Math.min(1, (now - f.t0) / f.dur);

@@ -49,7 +49,8 @@
 
 /* Season */
 .season { padding: clamp(90px, 14vh, 160px) var(--gutter) clamp(80px, 12vh, 140px); position: relative; }
-.season-head { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-bottom: 26px; }
+.season-head { display: flex; justify-content: space-between; align-items: baseline; gap: 6px 16px; margin-bottom: 26px; flex-wrap: wrap; }
+.season-soon { text-align: right; }
 .season-list { position: relative; }
 .sr { position: relative; display: grid; grid-template-columns: 8.5ch 1fr auto auto; align-items: baseline; gap: 0 var(--gutter); padding: 6px 0 2px; border-top: 1px solid rgba(255,255,255,.22); }
 .sr:last-of-type { border-bottom: 1px solid rgba(255,255,255,.22); }
@@ -65,17 +66,18 @@
 .season-foot { margin-top: 44px; display: flex; justify-content: center; }
 
 /* Zone story */
-.zs { height: 640vh; position: relative; }
+.zs { height: 780vh; position: relative; }
 .zs-stick { position: sticky; top: 0; height: 100vh; height: 100lvh; overflow: hidden; }
 .zs-canvas, .zs-fallback { position: absolute; inset: 0; width: 100%; height: 100%; transition: opacity 1s; pointer-events: none; }
 .zs-fallback img { object-fit: cover; }
 .zs-grad { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,0) 34%, rgba(0,0,0,0) 62%, rgba(0,0,0,.72) 100%); pointer-events: none; }
 .zs-ui { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; padding: 88px var(--gutter) calc(var(--bar) + 26px); pointer-events: none; }
 .zs-ui a, .zs-ui button { pointer-events: auto; }
-.zs-title { max-width: 13ch; animation: fadein .7s var(--ease) both; }
-.zs-zone { display: grid; gap: 12px; animation: fadein .7s var(--ease) both; }
+.zs-copy { position: relative; flex: 1; min-height: 0; }
+.zs-panel { position: absolute; inset: 0 0 auto 0; will-change: opacity, transform; }
+.zs-title { max-width: 13ch; }
+.zs-zone { display: grid; gap: 12px; }
 .zs-zone h3 { text-transform: uppercase; }
-@keyframes fadein { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
 .zs-bottom { display: flex; justify-content: flex-end; align-items: center; gap: 20px; flex-wrap: wrap; padding-left: clamp(130px, 13vw, 190px); }
 .zs-dots { position: relative; display: flex; gap: 6px; margin-right: auto; font-size: var(--t-xs); flex-wrap: wrap; }
 .zs-dots button { min-height: 36px; padding: 0 12px; border-radius: 999px; opacity: .6; transition: opacity .3s, background-color .3s, color .3s; white-space: nowrap; }
@@ -134,7 +136,8 @@
   .sr-cta { grid-column: 2; grid-row: 1; }
   .sr-poster { display: none; }
   .season-head { flex-direction: column; gap: 4px; }
-  .zs { height: 520vh; }
+  .season-soon { text-align: left; }
+  .zs { height: 660vh; }
   .zs-ui { padding-bottom: calc(var(--bar) + 80px); }
   .zs-bottom { padding-left: 0; gap: 8px; }
   .zs-dots { flex-wrap: nowrap; overflow-x: auto; width: 100%; margin: 0; scrollbar-width: none; }

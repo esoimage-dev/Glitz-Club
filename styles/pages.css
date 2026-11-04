@@ -20,7 +20,9 @@
 .evd-name { font-size: clamp(5rem, 21vw, 24rem); line-height: .86; text-transform: uppercase; letter-spacing: 0; margin: 8px 0 clamp(30px, 6vh, 60px); text-wrap: initial; }
 .evd-date { font-size: var(--t-m); }
 .evd-body { display: grid; grid-template-columns: 5fr 7fr; gap: calc(var(--gutter) * 2); align-items: start; }
-.evd-poster { aspect-ratio: 4/5; background: #0a0a0a; }
+.evd-poster { aspect-ratio: 4/5; background: #000; }
+.evd-poster img { object-fit: contain; object-position: top; }
+.evd-soon { font-size: var(--t-m); max-width: 34ch; }
 .evd-info { position: sticky; top: 90px; display: grid; gap: 28px; justify-items: start; }
 .evd-lineup { font-size: var(--t-m); }
 .evd-actions { display: flex; flex-wrap: wrap; gap: 10px; }

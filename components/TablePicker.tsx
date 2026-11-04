@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { WHATSAPP, events, longDate, zones, type ZoneId } from '@/lib/data';
+import { SOON, WHATSAPP, events, isPast, longDate, zones, type ZoneId } from '@/lib/data';
 import tablesData from '@/lib/tables.json';
 import type { ClubScene, Mood } from '@/lib/club-scene';
 
@@ -25,7 +25,8 @@ export default function TablePicker() {
   const [ready, setReady] = useState(false);
   const [noGL, setNoGL] = useState(false);
   const [mood, setMood] = useState<Mood>('night');
-  const [ev, setEv] = useState(events[0].slug);
+  const upcoming = events.filter((e) => !isPast(e.date));
+  const [ev, setEv] = useState(upcoming[0]?.slug ?? 'estate-2027');
   const [zone, setZone] = useState<ZoneId | null>(null);
   const [table, setTable] = useState<string | null>(null);
   const [guests, setGuests] = useState(6);
@@ -33,7 +34,8 @@ export default function TablePicker() {
   const [phone, setPhone] = useState('');
   const [sent, setSent] = useState(false);
 
-  const event = events.find((e) => e.slug === ev)!;
+  const event = upcoming.find((e) => e.slug === ev);
+  const eventLabel = event ? `${event.name}, ${longDate(event.date)}` : 'Estate 2027';
   const taken = useMemo(() => new Set(TABLES.filter((t) => isTaken(t.id, ev)).map((t) => t.id)), [ev]);
   const zoneInfo = zones.find((z) => z.id === zone);
   const visible = zone ? TABLES.filter((t) => t.zone === zone) : [];
@@ -42,7 +44,7 @@ export default function TablePicker() {
 
   useEffect(() => {
     const q = new URLSearchParams(location.search);
-    const qe = q.get('evento'); if (qe && events.some((e) => e.slug === qe)) setEv(qe);
+    const qe = q.get('evento'); if (qe && upcoming.some((e) => e.slug === qe)) setEv(qe);
     let disposed = false;
     (async () => {
       const m = await import('@/lib/club-scene');
@@ -90,7 +92,7 @@ export default function TablePicker() {
   }
   const toggleMood = (m: Mood) => { setMood(m); scene.current?.setMood(m); };
 
-  const waText = encodeURIComponent(`Ciao Glitz, sono ${name}. Vorrei il tavolo ${table} (${zoneInfo?.name}) per ${event.name}, ${longDate(event.date)}. Siamo in ${guests}. Telefono ${phone}.`);
+  const waText = encodeURIComponent(`Ciao Glitz, sono ${name}. Vorrei il tavolo ${table} (${zoneInfo?.name}) per ${eventLabel}. Siamo in ${guests}. Telefono ${phone}.`);
 
   return (
     <main className="tp-page tone-night" data-tone="night">
@@ -120,11 +122,13 @@ export default function TablePicker() {
         {!zone && (
           <div className="tp-step">
             <h1 className="d d-xl">Scegli la tua vista.</h1>
-            <label className="tp-ev"><span className="dim small">Per la serata</span>
-              <select value={ev} onChange={(e) => setEv(e.target.value)}>
-                {events.map((e) => <option key={e.slug} value={e.slug}>{e.name}, {longDate(e.date)}</option>)}
-              </select>
-            </label>
+            {upcoming.length > 0 ? (
+              <label className="tp-ev"><span className="dim small">Per la serata</span>
+                <select value={ev} onChange={(e) => setEv(e.target.value)}>
+                  {upcoming.map((e) => <option key={e.slug} value={e.slug}>{e.name}, {longDate(e.date)}</option>)}
+                </select>
+              </label>
+            ) : <p>{SOON.line} Intanto scegli dove vuoi stare.</p>}
             <ul className="tp-zones">
               {zones.map((z) => {
                 const free = TABLES.filter((t) => t.zone === z.id && !taken.has(t.id)).length;
@@ -149,17 +153,17 @@ export default function TablePicker() {
               <div className="tp-chips">
                 {visible.map((t) => <button key={t.id} disabled={taken.has(t.id)} onClick={() => pickTable(t.id)}>{t.id}</button>)}
               </div>
-              <p className="small dim">I tavoli barrati sono già presi per {event.name}.</p>
+              <p className="small dim">I tavoli barrati sono già presi.</p>
             </>}
             {table && (
               <form className="tp-form" onSubmit={(e) => { e.preventDefault(); setSent(true); }}>
-                <p className="small dim">{zoneInfo.name}, {event.name}, {longDate(event.date)}</p>
+                <p className="small dim">{zoneInfo.name}, {eventLabel}</p>
                 <dl className="tp-sum"><div><dt className="dim">Consumazione minima</dt><dd className="num d-l">€{zoneInfo.from}</dd></div></dl>
                 <div className="tk-qty"><span>Ospiti</span><div><button type="button" aria-label="Un ospite in meno" onClick={() => setGuests(Math.max(2, guests - 1))}>−</button><output aria-live="polite">{guests}</output><button type="button" aria-label="Un ospite in più" onClick={() => setGuests(Math.min(14, guests + 1))}>+</button></div></div>
                 <label className="fld"><span>Nome e cognome</span><input required value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" /></label>
                 <label className="fld"><span>Telefono</span><input required type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} autoComplete="tel" /></label>
                 <button className="btn btn-led" type="submit">Richiedi il tavolo {table}</button>
-                <p className="small dim">Non paghi ora. Lo staff conferma su WhatsApp.</p>
+                <p className="small dim">{event ? 'Non paghi ora. Lo staff conferma su WhatsApp.' : 'Non paghi ora. Lo staff ti ricontatta su WhatsApp appena esce il programma.'}</p>
               </form>
             )}
           </div>

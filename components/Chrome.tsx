@@ -7,10 +7,10 @@ import { AnimatePresence, motion } from 'motion/react';
 import Lenis from 'lenis';
 import { LiveLogo } from './Logo';
 import Intro from './Intro';
-import { INSTAGRAM, TIKTOK, WHATSAPP, WHATSAPP_LABEL, events } from '@/lib/data';
+import { INSTAGRAM, TIKTOK, WHATSAPP, WHATSAPP_LABEL } from '@/lib/data';
 
 const NAV = [
-  { href: '/eventi', label: 'Serate', note: `${events.length} in estate`, img: '/media/fumo-folla.jpg' },
+  { href: '/eventi', label: 'Serate', note: 'estate 2026', img: '/media/fumo-folla.jpg' },
   { href: '/tavoli', label: 'Tavoli', note: 'scegli dalla mappa', img: '/media/scale-tramonto.jpg' },
   { href: '/il-club', label: 'Il club', note: 'il posto', img: '/media/sofa-dino.jpg' },
   { href: '/privati', label: 'Eventi privati', note: 'tutto per voi', img: '/media/villa-notte.jpg' },

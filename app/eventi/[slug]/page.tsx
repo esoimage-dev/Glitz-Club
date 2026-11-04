@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Footer from '@/components/Footer';
 import TicketSheet from '@/components/TicketSheet';
-import { events, longDate, parts } from '@/lib/data';
+import { INSTAGRAM, SOON, events, isPast, longDate, parts } from '@/lib/data';
 
 export function generateStaticParams() { return events.map((e) => ({ slug: e.slug })); }
 
@@ -35,12 +35,16 @@ export default async function EventPage({ params }: Props) {
           <div className="evd-info">
             <p className="d d-xl">{ev.tagline}</p>
             <ul className="evd-lineup">{ev.lineup.map((l) => <li key={l}>{l}</li>)}</ul>
-            <div className="evd-actions">
-              <TicketSheet event={ev} />
-              <Link href={`/tavoli?evento=${ev.slug}`} className="btn btn-line"><span>Scegli un tavolo</span></Link>
-            </div>
+            {isPast(ev.date) ? (
+              <p className="evd-soon">{SOON.line} <a className="link-u" href={INSTAGRAM} target="_blank" rel="noreferrer">{SOON.cta}</a></p>
+            ) : (
+              <div className="evd-actions">
+                <TicketSheet event={ev} />
+                <Link href={`/tavoli?evento=${ev.slug}`} className="btn btn-line"><span>Scegli un tavolo</span></Link>
+              </div>
+            )}
             <dl className="evd-facts">
-              <div><dt className="dim">Cancelli</dt><dd>Dalle 23:30</dd></div>
+              <div><dt className="dim">Cancelli</dt><dd>{ev.doors ?? 'Dalle 23:30'}</dd></div>
               <div><dt className="dim">Età</dt><dd>18+, con documento</dd></div>
               <div><dt className="dim">Dress code</dt><dd>Smart ed elegante</dd></div>
               <div><dt className="dim">Dove</dt><dd>Contrada Dino, San Nicola Arcella</dd></div>
