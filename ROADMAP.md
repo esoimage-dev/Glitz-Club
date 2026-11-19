@@ -1,5 +1,11 @@
 # Glitz Club: stato del progetto
 
+> **⚠ Da fare (19 novembre 2026): aggiornare Next.js.** Pubblicando con `npm run deploy`, Next.js 16.4.4 ha avvisato che
+> questa versione ha una vulnerabilità di sicurezza nota e consiglia di aggiornarla (comando suggerito da Next:
+> `next upgrade --agent=security`). Non fatto ancora, per scelta di Edoardo: farlo alla prossima sessione su questa repo,
+> poi ricontrollare 3D, tavoli, pagine delle serate e pubblicazione. Il sito ha solo pagine statiche (niente server),
+> quindi il rischio oggi è basso, ma va fatto prima della messa online sul dominio vero.
+
 ## Fatto (v0.1)
 - Logo vettoriale identico al master, animazione "L'accensione" (`public/brand/`, `/brand`)
 - Design system: giorno bianco, tramonto, notte LED (`styles/base.css`)

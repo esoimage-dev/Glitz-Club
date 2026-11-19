@@ -189,7 +189,9 @@ ul, ol { list-style: none; }
 /* On the home the clock sits at the very bottom: the last line stays above it */
 main:has(.hero) .ft-legal { padding-bottom: 40px; }
 .ft-addr { text-align: left; }
-.ft-addr:hover, .ft-mm:hover { text-decoration: underline; }
+.ft-addr:hover { text-decoration: underline; }
+.ft-mm { text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; white-space: nowrap; }
+.ft-mm:hover { text-decoration-thickness: 2px; }
 .ft-night { position: absolute; inset: 0 0 auto 0; height: 58%; pointer-events: none; }
 .ft { position: relative; color: var(--black); padding: clamp(120px, 22vh, 240px) var(--gutter) var(--gutter); overflow: hidden;
   background: linear-gradient(180deg, #000 0%, #120a35 16%, #3b1d73 30%, #b5457f 48%, #f68f6c 62%, #ffd9b0 76%, #fff 96%); }
