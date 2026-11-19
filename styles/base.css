@@ -192,6 +192,9 @@ main:has(.hero) .ft-legal { padding-bottom: 40px; }
 .ft-addr:hover { text-decoration: underline; }
 .ft-mm { text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; white-space: nowrap; }
 .ft-mm:hover { text-decoration-thickness: 2px; }
+.ft-by { white-space: nowrap; }
+.ft-by i { font-style: normal; }
+@media (max-width: 760px) { .ft-by { display: block; margin-top: 6px; } .ft-by i { display: none; } }
 .ft-night { position: absolute; inset: 0 0 auto 0; height: 58%; pointer-events: none; }
 .ft { position: relative; color: var(--black); padding: clamp(120px, 22vh, 240px) var(--gutter) var(--gutter); overflow: hidden;
   background: linear-gradient(180deg, #000 0%, #120a35 16%, #3b1d73 30%, #b5457f 48%, #f68f6c 62%, #ffd9b0 76%, #fff 96%); }
@@ -204,7 +207,7 @@ main:has(.hero) .ft-legal { padding-bottom: 40px; }
 .ft-cols h4 { font-weight: 500; font-size: var(--t-xs); margin-bottom: 10px; opacity: .6; }
 .ft-cols li { margin-bottom: 4px; }
 .ft-logo { width: 100%; color: var(--black); }
-.ft-legal { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 20px; margin-top: 24px; }
+.ft-legal { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 20px; margin-top: 36px; }
 
 /* Intro: the logo powers on, then the night opens in the shape of the arch */
 .intro { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; overflow: hidden; cursor: pointer; }
